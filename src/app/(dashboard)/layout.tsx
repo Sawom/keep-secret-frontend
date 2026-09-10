@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LayoutDashboard, User, Settings, LogOut } from 'lucide-react';
+import ThemeToggle from '@/components/ThemeToggle';
 
 export default function DashboardGroupLayout({
     children,
@@ -58,6 +59,11 @@ export default function DashboardGroupLayout({
                         <LogOut className="w-5 h-5" />
                         Logout
                     </button>
+                </div>
+
+                <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 space-y-2">
+                    <ThemeToggle /> {/* এখানে ড্যাশবোর্ডে থিম টগল কাজ করবে */}
+                    {/* <LogoutButton /> */}
                 </div>
             </aside>
 
