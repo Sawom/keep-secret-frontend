@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Lock, Sparkles, KeyRound, EyeOff, ArrowRight, LogOut, FileText, Layers, Cpu } from 'lucide-react';
 import { useUser } from '@/hooks/useUser';
+import LogoutButton from '@/components/LogoutButton';
 
 export default function HomePage() {
   // const [darkMode, setDarkMode] = useState(true);
@@ -52,15 +53,7 @@ export default function HomePage() {
                   Dashboard
                 </Link>
 
-                <button
-                  onClick={() => {
-                    window.location.href = '/login';
-                  }}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
-                >
-                  <LogOut className="w-5 h-5" />
-                  Logout
-                </button>
+                <LogoutButton />
               </>
             ) : (
               <>

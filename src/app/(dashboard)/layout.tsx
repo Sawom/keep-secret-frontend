@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LayoutDashboard, User, Settings, LogOut } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
+import LogoutButton from '@/components/LogoutButton';
 
 export default function DashboardGroupLayout({
     children,
@@ -50,15 +51,7 @@ export default function DashboardGroupLayout({
                 </nav>
 
                 <div className="p-4 border-t border-zinc-200 dark:border-zinc-800">
-                    <button
-                        onClick={() => {
-                            window.location.href = '/login';
-                        }}
-                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
-                    >
-                        <LogOut className="w-5 h-5" />
-                        Logout
-                    </button>
+                    <LogoutButton />
                 </div>
 
                 <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 space-y-2">
