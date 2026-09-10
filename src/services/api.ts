@@ -4,27 +4,15 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export const api = axios.create({
     baseURL: API_BASE_URL,
-    withCredentials: true,
+    withCredentials: true, // ক্রস-ডোমেইন রিকোয়েস্টে কুকি পাঠানোর জন্য এটি অত্যন্ত জরুরি
     headers: {
         'Content-Type': 'application/json',
     },
 });
 
-// ১. Request Interceptor: লোকালস্টোরেজ থেকে JWT টোকেন রিড করে হেডার-এ যুক্ত করা
-api.interceptors.request.use(
-    (config) => {
-        if (typeof window !== 'undefined') {
-            const token = localStorage.getItem('token');
-            if (token) {
-                config.headers.Authorization = `Bearer ${token}`;
-            }
-        }
-        return config;
-    },
-    (error) => Promise.reject(error)
-);
+// নোট: HttpOnly কুকি ব্যবহারের কারণে রিকোয়েস্ট ইন্টারসেপ্টর থেকে localStorage-এর টোকেন হেডারে বসানোর কোডটি আর দরকার নেই।
 
-// ২. Response Interceptor: ব্যাকএন্ডের এররগুলো সুন্দরভাবে rap করে ফ্রন্টএন্ডে পাঠানো
+// Response Interceptor: ব্যাকএন্ডের এররগুলো সুন্দরভাবে rap করে ফ্রন্টএন্ডে পাঠানো
 api.interceptors.response.use(
     (response) => response.data,
     (error) => {

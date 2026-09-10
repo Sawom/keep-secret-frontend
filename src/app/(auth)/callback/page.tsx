@@ -3,25 +3,20 @@
 export const dynamic = 'force-dynamic';
 
 import { useEffect, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useAuthStore } from '@/store/useAuthStore';
+import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
 function CallbackContent() {
     const router = useRouter();
-    const searchParams = useSearchParams();
-    const setToken = useAuthStore((state) => state.setToken);
 
     useEffect(() => {
-        const token = searchParams.get('token');
+        // ব্যাকএন্ড অলريডি HttpOnly কুকি সেট করে দিয়েছে, তাই সরাসরি ড্যাশবোর্ডে রিডাইরেক্ট
+        const timer = setTimeout(() => {
+            router.replace('/dashboard');
+        }, 500);
 
-        if (token) {
-            setToken(token);
-            router.push('/dashboard');
-        } else {
-            router.push('/login?error=GoogleAuthFailed');
-        }
-    }, [searchParams, setToken, router]);
+        return () => clearTimeout(timer);
+    }, [router]);
 
     return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-zinc-50 dark:bg-zinc-950">
