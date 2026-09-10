@@ -107,7 +107,7 @@ export default function LoginPage() {
                             const backendUrl = process.env.NEXT_PUBLIC_API_URL;
                             window.location.href = `${backendUrl}/auth/google`;
                         }}
-                        className="w-full mt-2 flex items-center justify-center gap-2 py-2.5 px-4 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-750 text-zinc-700 dark:text-zinc-200 font-medium rounded-lg transition-colors text-sm"
+                        className="w-full mt-2 flex items-center justify-center gap-2 py-2.5 px-4 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-900 text-zinc-700 dark:text-zinc-200 font-medium rounded-lg transition-colors text-sm"
                     >
                         <svg className="w-4 h-4" viewBox="0 0 24 24">
                             <path
