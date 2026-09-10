@@ -8,17 +8,12 @@ export default function ThemeToggle() {
     const { theme, setTheme } = useTheme();
     const [mounted, setMounted] = useState(false);
 
-    // হাইড্রেশন মিসম্যাচ এড়ানোর জন্য
     useEffect(() => {
         setMounted(true);
     }, []);
 
     if (!mounted) {
-        return (
-            <div className="w-full px-4 py-3 rounded-xl text-sm font-medium text-zinc-400 opacity-0">
-                Loading...
-            </div>
-        );
+        return null;
     }
 
     const isDark = theme === 'dark';
@@ -26,17 +21,17 @@ export default function ThemeToggle() {
     return (
         <button
             onClick={() => setTheme(isDark ? 'light' : 'dark')}
-            className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+            className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all"
+            aria-label="Toggle Theme"
+
         >
             {isDark ? (
                 <>
-                    <Sun className="w-5 h-5 text-amber-500" />
-                    <span>Light Mode</span>
+                    <Sun className="w-4 h-4 text-amber-400" />
                 </>
             ) : (
                 <>
-                    <Moon className="w-5 h-5 text-indigo-500" />
-                    <span>Dark Mode</span>
+                    <Moon className="w-4 h-4 text-indigo-600" />
                 </>
             )}
         </button>

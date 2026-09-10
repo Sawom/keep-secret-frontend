@@ -10,7 +10,7 @@ function CallbackContent() {
     const router = useRouter();
 
     useEffect(() => {
-        // ব্যাকএন্ড অলريডি HttpOnly কুকি সেট করে দিয়েছে, তাই সরাসরি ড্যাশবোর্ডে রিডাইরেক্ট
+        // কুকি সেট করে সরাসরি ড্যাশবোর্ডে রিডাইরেক্ট
         const timer = setTimeout(() => {
             router.replace('/dashboard');
         }, 500);

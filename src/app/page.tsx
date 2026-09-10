@@ -1,20 +1,23 @@
 'use client';
 
+import ThemeToggle from '@/components/ThemeToggle';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Lock, Sparkles, KeyRound, EyeOff, ArrowRight, Sun, Moon, FileText, Layers, Cpu } from 'lucide-react';
+import { useUser } from '@/hooks/useUser';
 
 export default function HomePage() {
-  const [darkMode, setDarkMode] = useState(true);
+  // const [darkMode, setDarkMode] = useState(true);
   const [typedText, setTypedText] = useState('Project KeepSecret: Zero-knowledge architecture implementation in progress...');
 
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [darkMode]);
+  // useEffect(() => {
+  //   if (darkMode) {
+  //     document.documentElement.classList.add('dark');
+  //   } else {
+  //     document.documentElement.classList.remove('dark');
+  //   }
+  // }, [darkMode]);
+  const { user, loading } = useUser();
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300 relative overflow-hidden">
@@ -36,13 +39,7 @@ export default function HomePage() {
 
           <div className="flex items-center gap-4">
             {/* Theme Toggle Button */}
-            <button
-              onClick={() => setDarkMode(!darkMode)}
-              className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all"
-              aria-label="Toggle Theme"
-            >
-              {darkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-indigo-600" />}
-            </button>
+            <ThemeToggle />
 
             <Link
               href="/login"
