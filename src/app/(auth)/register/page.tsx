@@ -121,7 +121,6 @@ export default function RegisterPage() {
                         {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Sign Up <ArrowRight className="w-4 h-4" /></>}
                     </button>
 
-
                 </form>
 
                 {/* google login */}
