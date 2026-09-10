@@ -3,7 +3,7 @@
 import ThemeToggle from '@/components/ThemeToggle';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Lock, Sparkles, KeyRound, EyeOff, ArrowRight, Sun, Moon, FileText, Layers, Cpu } from 'lucide-react';
+import { Lock, Sparkles, KeyRound, EyeOff, ArrowRight, LogOut, FileText, Layers, Cpu } from 'lucide-react';
 import { useUser } from '@/hooks/useUser';
 
 export default function HomePage() {
@@ -41,19 +41,39 @@ export default function HomePage() {
             {/* Theme Toggle Button */}
             <ThemeToggle />
 
-            <Link
-              href="/login"
-              className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white px-3 py-2 transition-colors"
-            >
-              Login
-            </Link>
+            {loading ? (
+              <div className="text-sm text-slate-400">Loading...</div>
+            ) : user ? (
+              <>
+                <Link
+                  href="/dashboard"
+                  className="text-sm font-semibold bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-emerald-600/25"
+                >
+                  Dashboard
+                </Link>
 
-            <Link
-              href="/register"
-              className="text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-indigo-600/25"
-            >
-              Register
-            </Link>
+                <button
+                  onClick={() => {
+                    window.location.href = '/login';
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                >
+                  <LogOut className="w-5 h-5" />
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white px-3 py-2 transition-colors"
+                >
+                  Login
+                </Link>
+
+              </>
+            )}
+
           </div>
         </div>
       </header>
