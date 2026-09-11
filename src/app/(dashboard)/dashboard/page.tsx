@@ -18,10 +18,22 @@ export default function DashboardPage() {
     useEffect(() => {
         const fetchProfile = async () => {
             try {
-                const response: any = await authService.getProfile();
+                const response: any =
+                    await authService.getProfile();
 
                 setUser(response.user);
             } catch (err: any) {
+                console.error('Profile error:', err);
+
+                const status = err?.response?.status;
+
+                if (status === 401) {
+                    window.location.href =
+                        '/login?callbackUrl=/dashboard';
+
+                    return;
+                }
+
                 setError(
                     err?.response?.data?.message ||
                     err?.message ||

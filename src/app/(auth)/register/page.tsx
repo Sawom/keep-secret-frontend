@@ -38,6 +38,24 @@ export default function RegisterPage() {
         }
     };
 
+    // google login
+    const handleGoogleLogin = () => {
+        const backendUrl =
+            process.env.NEXT_PUBLIC_API_URL;
+
+        const popup = window.open(
+            `${backendUrl}/auth/google`,
+            'google-login',
+            'width=500,height=650,left=200,top=100',
+        );
+
+        if (!popup) {
+            setError(
+                'Google login popup was blocked by your browser. Please allow popups and try again.'
+            );
+        }
+    };
+
     return (
         <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 px-4 py-8">
             <div className="max-w-md w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-8 shadow-sm">
@@ -133,10 +151,7 @@ export default function RegisterPage() {
 
                     <button
                         type="button"
-                        onClick={() => {
-                            const backendUrl = process.env.NEXT_PUBLIC_API_URL;
-                            window.location.href = `${backendUrl}/auth/google`;
-                        }}
+                        onClick={handleGoogleLogin}
                         className="w-full mt-2 flex items-center justify-center gap-2 py-2.5 px-4 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-750 text-zinc-700 dark:text-zinc-200 font-medium rounded-lg transition-colors text-sm"
                     >
                         <svg className="w-4 h-4" viewBox="0 0 24 24">

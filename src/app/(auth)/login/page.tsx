@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { authService } from '@/services/auth.service';
@@ -20,6 +20,41 @@ function LoginForm() {
     // এখানে callbackUrl টি ঠিকভাবে ধরে নেওয়া হলো (না থাকলে ডিফল্ট /dashboard থাকবে)
     const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
 
+    useEffect(() => {
+        const handleGoogleMessage = (
+            event: MessageEvent
+        ) => {
+            if (
+                event.origin !==
+                window.location.origin
+            ) {
+                return;
+            }
+
+            if (
+                event.data?.type ===
+                'GOOGLE_LOGIN_SUCCESS'
+            ) {
+                window.location.href =
+                    callbackUrl;
+            }
+        };
+
+        window.addEventListener(
+            'message',
+            handleGoogleMessage
+        );
+
+        return () => {
+            window.removeEventListener(
+                'message',
+                handleGoogleMessage
+            );
+        };
+    }, [callbackUrl]);
+
+
+
     const handleLogin = async (
         e: React.FormEvent
     ) => {
@@ -34,11 +69,12 @@ function LoginForm() {
                 password,
             });
 
-            // Backend HttpOnly cookie set করেছে।
-            // Frontend থেকে token read/set করার দরকার নেই।
+            console.log('Login successful');
 
             window.location.href = callbackUrl;
         } catch (err: any) {
+            console.error('Login error:', err);
+
             setError(
                 err?.response?.data?.message ||
                 err?.message ||
@@ -46,6 +82,25 @@ function LoginForm() {
             );
         } finally {
             setLoading(false);
+        }
+    };
+
+
+    // google login
+    const handleGoogleLogin = () => {
+        const backendUrl =
+            process.env.NEXT_PUBLIC_API_URL;
+
+        const popup = window.open(
+            `${backendUrl}/auth/google`,
+            'google-login',
+            'width=500,height=650,left=200,top=100',
+        );
+
+        if (!popup) {
+            setError(
+                'Google login popup was blocked by your browser. Please allow popups and try again.'
+            );
         }
     };
 
@@ -122,10 +177,7 @@ function LoginForm() {
 
                 <button
                     type="button"
-                    onClick={() => {
-                        const backendUrl = process.env.NEXT_PUBLIC_API_URL;
-                        window.location.href = `${backendUrl}/auth/google`;
-                    }}
+                    onClick={handleGoogleLogin}
                     className="w-full mt-2 flex items-center justify-center gap-2 py-2.5 px-4 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-900 text-zinc-700 dark:text-zinc-200 font-medium rounded-lg transition-colors text-sm"
                 >
                     <svg className="w-4 h-4" viewBox="0 0 24 24">
