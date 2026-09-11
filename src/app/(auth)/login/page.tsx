@@ -14,33 +14,36 @@ function LoginForm() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
-    const router = useRouter();
     const searchParams = useSearchParams();
     const isRegistered = searchParams.get('registered');
 
     // এখানে callbackUrl টি ঠিকভাবে ধরে নেওয়া হলো (না থাকলে ডিফল্ট /dashboard থাকবে)
     const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
 
-    const handleLogin = async (e: React.FormEvent) => {
+    const handleLogin = async (
+        e: React.FormEvent
+    ) => {
         e.preventDefault();
+
         setError('');
         setLoading(true);
 
         try {
-            // authService.login কল করলে যদি ব্যাকএন্ড থেকে টোকেন রিটার্ন করে
-            const response: any = await authService.login({ email, password });
+            await authService.login({
+                email,
+                password,
+            });
 
-            // ব্যাকএন্ড থেকে আসা টোকেন (নিশ্চিত করো ব্যাকএন্ড যেন accessToken রেসপন্সেও পাঠায়)
-            const token = response?.accessToken || response?.token;
-
-            if (token) {
-                // ব্রাউজারে ফার্স্ট-পার্টি কুকি হিসেবে সেট করে দেওয়া
-                document.cookie = `accessToken=${token}; path=/; max-age=${7 * 24 * 60 * 60}; Secure; SameSite=Lax`;
-            }
+            // Backend HttpOnly cookie set করেছে।
+            // Frontend থেকে token read/set করার দরকার নেই।
 
             window.location.href = callbackUrl;
         } catch (err: any) {
-            setError(err.message || 'Something went wrong during login!');
+            setError(
+                err?.response?.data?.message ||
+                err?.message ||
+                'Something went wrong during login!'
+            );
         } finally {
             setLoading(false);
         }
