@@ -6,21 +6,18 @@ export const authService = {
         return await api.post('/auth/register', data);
     },
 
-    // লগইন করা এবং টোকেন রিসিভ করা
+    // লগইন করা (HttpOnly কুকি ব্যাকএন্ড থেকে সেট হবে, তাই localStorage দরকার নেই)
     async login(data: { email: string; password: string }) {
         const response: any = await api.post('/auth/login', data);
-        if (response?.access_token || response?.token) {
-            localStorage.setItem('token', response.access_token || response.token);
-        }
         return response;
     },
 
-    // পাসওয়ার্ড ভুলে গেলে রিকভারি রিকোয়েস্ট পাঠানো
+    // পাসওয়ার্ড ভুলে গেলে রিকভারি রিকোয়েস্ট পাঠানো
     async forgotPassword(email: string) {
         return await api.post('/auth/forgot-password', { email });
     },
 
-    // রিসেট পাসওয়ার্ড টোকেন দিয়ে নতুন পাসওয়ার্ড সেট করা
+    // রিসেট পাসওয়ার্ড টোকেন দিয়ে নতুন পাসওয়ার্ড সেট করা
     async resetPassword(data: { token: string; newPassword: string }) {
         return await api.post('/auth/reset-password', data);
     },

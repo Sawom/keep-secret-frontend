@@ -18,17 +18,23 @@ function LoginForm() {
     const searchParams = useSearchParams();
     const isRegistered = searchParams.get('registered');
 
+    // এখানে callbackUrl টি ঠিকভাবে ধরে নেওয়া হলো (না থাকলে ডিফল্ট /dashboard থাকবে)
+    const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
+
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
         setLoading(true);
 
         try {
-            // ব্যাকএন্ড HttpOnly কুকি সেট করে দেবে, ফ্রন্টএন্ডে টোকেন ধরার দরকার নেই
+            // ১. authService দিয়ে ব্যাকএন্ডে লগইন রিকোয়েস্ট পাঠানো
             await authService.login({ email, password });
-            router.push('/dashboard');
+
+            // ২. সফলভাবে লগইন হওয়ার পর ড্যাশবোর্ডে বা প্রিভিয়াস ইউআরএলে রিডাইরেক্ট
+            window.location.href = callbackUrl;
+
         } catch (err: any) {
-            setError(err.message || 'Login failed. Please check your credentials.');
+            setError(err.message || 'Something went wrong during login!');
         } finally {
             setLoading(false);
         }
