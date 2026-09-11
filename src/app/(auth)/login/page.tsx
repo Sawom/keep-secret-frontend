@@ -27,12 +27,18 @@ function LoginForm() {
         setLoading(true);
 
         try {
-            // ১. authService দিয়ে ব্যাকএন্ডে লগইন রিকোয়েস্ট পাঠানো
-            await authService.login({ email, password });
+            // authService.login কল করলে যদি ব্যাকএন্ড থেকে টোকেন রিটার্ন করে
+            const response: any = await authService.login({ email, password });
 
-            // ২. সফলভাবে লগইন হওয়ার পর ড্যাশবোর্ডে বা প্রিভিয়াস ইউআরএলে রিডাইরেক্ট
+            // ব্যাকএন্ড থেকে আসা টোকেন (নিশ্চিত করো ব্যাকএন্ড যেন accessToken রেসপন্সেও পাঠায়)
+            const token = response?.accessToken || response?.token;
+
+            if (token) {
+                // ব্রাউজারে ফার্স্ট-পার্টি কুকি হিসেবে সেট করে দেওয়া
+                document.cookie = `accessToken=${token}; path=/; max-age=${7 * 24 * 60 * 60}; Secure; SameSite=Lax`;
+            }
+
             window.location.href = callbackUrl;
-
         } catch (err: any) {
             setError(err.message || 'Something went wrong during login!');
         } finally {
