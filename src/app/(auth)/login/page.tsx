@@ -87,21 +87,9 @@ function LoginForm() {
 
 
     // google login
-    const handleGoogleLogin = () => {
-        const backendUrl =
-            process.env.NEXT_PUBLIC_API_URL;
-
-        const popup = window.open(
-            `${backendUrl}/auth/google`,
-            'google-login',
-            'width=500,height=650,left=200,top=100',
-        );
-
-        if (!popup) {
-            setError(
-                'Google login popup was blocked by your browser. Please allow popups and try again.'
-            );
-        }
+   const handleGoogleLogin = () => {
+        const backendUrl = process.env.NEXT_PUBLIC_API_URL;
+        window.location.href = `${backendUrl}/auth/google`;
     };
 
     return (
