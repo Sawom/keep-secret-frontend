@@ -6,7 +6,6 @@ import { api } from '@/services/api'; // তোমার ব্যাকএন�
 import { LogOut, Loader2 } from 'lucide-react';
 
 export default function LogoutButton() {
-    const router = useRouter();
     const [isLoggingOut, setIsLoggingOut] = useState(false);
 
     const handleLogout = async () => {
@@ -19,8 +18,7 @@ export default function LogoutButton() {
         } finally {
             setIsLoggingOut(false);
             // লগআউট হওয়ার পর হোম পেজে রিডাইরেক্ট করে পেজ রিফ্রেশ বা ক্যাশ ক্লিয়ার করা
-            router.push('/');
-            router.refresh();
+            window.location.href = '/';
         }
     };
 
