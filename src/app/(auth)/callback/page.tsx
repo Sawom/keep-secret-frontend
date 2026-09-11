@@ -3,20 +3,27 @@
 export const dynamic = 'force-dynamic';
 
 import { useEffect, Suspense } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
 function CallbackContent() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const token = searchParams.get('token');
 
     useEffect(() => {
-        // কুকি সেট করে সরাসরি ড্যাশবোর্ডে রিডাইরেক্ট
+        if (token) {
+            // ১. ব্যাকএন্ড থেকে আসা টোকেনটি ব্রাউজারে কুকি হিসেবে সেট করা
+            document.cookie = `accessToken=${token}; path=/; max-age=${7 * 24 * 60 * 60}; Secure; SameSite=None`;
+        }
+
+        // ২. কুকি সেট হওয়ার পর ড্যাশবোর্ডে রিডাইরেক্ট (হার্ড রিফ্রেশ সহ দিলে সবচয়ে সেফ)
         const timer = setTimeout(() => {
-            router.replace('/dashboard');
+            window.location.href = '/dashboard';
         }, 500);
 
         return () => clearTimeout(timer);
-    }, [router]);
+    }, [token]);
 
     return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-zinc-50 dark:bg-zinc-950">
