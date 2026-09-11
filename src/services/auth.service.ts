@@ -18,6 +18,10 @@ export const authService = {
         return await api.post('/auth/login', data);
     },
 
+    async logout() {
+        return await api.post('/auth/logout');
+    },
+
     async forgotPassword(email: string) {
         return await api.post('/auth/forgot-password', {
             email,

@@ -40,7 +40,9 @@ export default function RegisterPage() {
 
     // google login
     const handleGoogleLogin = () => {
-        const backendUrl = process.env.NEXT_PUBLIC_API_URL;
+        const backendUrl =
+            process.env.NEXT_PUBLIC_API_URL;
+
         window.location.href = `${backendUrl}/auth/google`;
     };
 

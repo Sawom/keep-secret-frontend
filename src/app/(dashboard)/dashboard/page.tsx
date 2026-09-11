@@ -21,15 +21,19 @@ export default function DashboardPage() {
                 const response: any =
                     await authService.getProfile();
 
+                console.log('Profile response:', response);
+
                 setUser(response.user);
             } catch (err: any) {
                 console.error('Profile error:', err);
 
                 const status = err?.response?.status;
 
+                // User is not authenticated
                 if (status === 401) {
-                    window.location.href =
-                        '/login?callbackUrl=/dashboard';
+                    window.location.replace(
+                        '/login?callbackUrl=/dashboard'
+                    );
 
                     return;
                 }

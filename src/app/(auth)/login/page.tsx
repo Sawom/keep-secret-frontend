@@ -87,8 +87,10 @@ function LoginForm() {
 
 
     // google login
-   const handleGoogleLogin = () => {
-        const backendUrl = process.env.NEXT_PUBLIC_API_URL;
+    const handleGoogleLogin = () => {
+        const backendUrl =
+            process.env.NEXT_PUBLIC_API_URL;
+
         window.location.href = `${backendUrl}/auth/google`;
     };
 
