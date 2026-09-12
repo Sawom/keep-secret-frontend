@@ -6,19 +6,36 @@ import Link from 'next/link';
 import { Lock, Sparkles, KeyRound, EyeOff, ArrowRight, LogOut, FileText, Layers, Cpu } from 'lucide-react';
 import { useUser } from '@/hooks/useUser';
 import LogoutButton from '@/components/LogoutButton';
+import { useAuthStore } from '@/store/useAuthStore';
+import { api } from '@/services/api';
 
 export default function HomePage() {
-  // const [darkMode, setDarkMode] = useState(true);
   const [typedText, setTypedText] = useState('Project KeepSecret: Zero-knowledge architecture implementation in progress...');
 
-  // useEffect(() => {
-  //   if (darkMode) {
-  //     document.documentElement.classList.add('dark');
-  //   } else {
-  //     document.documentElement.classList.remove('dark');
-  //   }
-  // }, [darkMode]);
   const { user, loading } = useUser();
+  const setAccessToken = useAuthStore((state) => state.setAccessToken);
+
+  // পেজ লোড হওয়ার সাথে সাথে যদি কুকি থাকে কিন্তু Zustand এ টোকেন না থাকে, তবে সাইলেন্ট রিফ্রেশ করে টোকেন রিকভার করবে
+  useEffect(() => {
+    const checkAuthSession = async () => {
+      const currentToken = useAuthStore.getState().accessToken;
+      if (!currentToken) {
+        try {
+          const res: any = await api.post('/auth/refresh', {});
+          if (res?.accessToken) {
+            setAccessToken(res.accessToken);
+            // রিফ্রেশ সফল হলে পেজ রিলোড বা স্টেট সিঙ্ক করার জন্য প্রয়োজন হলে উইন্ডো রিফ্রেশ বা রাউটার রিফ্রেশ দিতে পারো
+            window.location.reload();
+          }
+        } catch (err) {
+          // রিফ্রেশ টোকেন না থাকলে বা মেয়াদ শেষ হলে ইউজার লগড আউট অবস্থায় থাকবে
+          console.log('No active session found');
+        }
+      }
+    };
+
+    checkAuthSession();
+  }, [setAccessToken]);
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300 relative overflow-hidden">
