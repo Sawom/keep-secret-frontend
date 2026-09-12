@@ -3,25 +3,25 @@
 export const dynamic = 'force-dynamic';
 
 import { useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
+import { useAuthStore } from '@/store/useAuthStore';
 
 function CallbackContent() {
     const searchParams = useSearchParams();
+    const router = useRouter();
     const token = searchParams.get('token');
+    const setAccessToken = useAuthStore((state) => state.setAccessToken);
 
     useEffect(() => {
         if (token) {
-            // ব্রাউজারে ফার্স্ট-পার্টি কুকি হিসেবে সেট করে দেওয়া (যাতে মিডলওয়্যার সাথে সাথে পড়তে পারে)
-            document.cookie = `accessToken=${token}; path=/; max-age=${7 * 24 * 60 * 60}; Secure; SameSite=Lax`;
+            // Zustand স্টেটে এক্সেস টোকেন সেভ করা
+            setAccessToken(token);
+            router.replace('/dashboard');
+        } else {
+            router.replace('/login');
         }
-
-        const timer = setTimeout(() => {
-            window.location.href = '/dashboard';
-        }, 500);
-
-        return () => clearTimeout(timer);
-    }, [token]);
+    }, [token, setAccessToken, router]);
 
     return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-zinc-50 dark:bg-zinc-950">
