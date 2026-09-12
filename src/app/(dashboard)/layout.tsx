@@ -64,9 +64,11 @@ export default function DashboardGroupLayout({
             {/* Google Keep Style Sidebar */}
             <aside className="w-64 border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex flex-col">
                 <div className="p-6 border-b border-zinc-200 dark:border-zinc-800">
-                    <h1 className="text-xl font-bold text-zinc-800 dark:text-zinc-100 flex items-center gap-2">
-                        Keep Secret
-                    </h1>
+                    <Link href="/" className="flex items-center gap-2 group cursor-pointer">
+                        <h1 className="text-xl font-bold text-zinc-800 dark:text-zinc-100 flex items-center gap-2">
+                            Keep Secret
+                        </h1>
+                    </Link>
                 </div>
 
                 <nav className="flex-1 p-4 space-y-1">
