@@ -62,13 +62,14 @@ export default function HomePage() {
             {/* Theme Toggle Button */}
             <ThemeToggle />
 
-            {/* সেশন চেক কিংবা ইউজারের ডেটা ফেচ হওয়া শেষ না হওয়া পর্যন্ত কোনোভাবেই লগইন বা ড্যাশবোর্ড বাটন দেখাবে না */}
-            {isCheckingAuth || loading && !user ? (
+            {/* ১. যতক্ষণ চেক চলছে অথবা ইউজার লোড হচ্ছে, ততক্ষণ একদম ফিক্সড লোডিং স্পিনার দেখাবে */}
+            {isCheckingAuth ? (
               <div className="flex items-center gap-2 text-sm text-slate-400 px-3 py-2 bg-slate-100 dark:bg-slate-900 rounded-xl animate-pulse">
                 <Loader2 className="w-4 h-4 animate-spin text-indigo-600" />
-                <span className="text-xs">Loading...</span>
+                <span className="text-xs">Checking...</span>
               </div>
-            ) : (useAuthStore.getState().accessToken || user) ? (
+            ) : (user || useAuthStore.getState().accessToken) ? (
+              // ২. ইউজার বা টোকেন যেটাই পাক না কেন, পেজ রিফ্রেশ হলেও এই পার্ট রেন্ডার হবে
               <>
                 <Link
                   href="/dashboard"
@@ -76,18 +77,16 @@ export default function HomePage() {
                 >
                   Dashboard
                 </Link>
-
                 <LogoutButton />
               </>
             ) : (
-              <>
-                <Link
-                  href="/login"
-                  className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white px-3 py-2 transition-colors"
-                >
-                  Login
-                </Link>
-              </>
+              // ৩. যদি পাকাপোক্তভাবে সেশন না থাকে, তবেই শুধু লগইন দেখাবে
+              <Link
+                href="/login"
+                className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white px-3 py-2 transition-colors"
+              >
+                Login
+              </Link>
             )}
 
           </div>
