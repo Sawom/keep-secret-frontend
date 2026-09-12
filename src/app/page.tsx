@@ -12,29 +12,37 @@ import { api } from '@/services/api';
 export default function HomePage() {
   const [typedText, setTypedText] = useState('Project KeepSecret: Zero-knowledge architecture implementation in progress...');
 
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true); // ড্যাশবোর্ডের মতো সেইম স্টেট নাম ব্যবহার করলাম
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [currentUser, setCurrentUser] = useState<any>(null); // লোকাল ইউজার স্টেট যা রেস কন্ডিশন আটকাবে
 
-  const { user, loading } = useUser();
   const setAccessToken = useAuthStore((state) => state.setAccessToken);
 
-  // ড্যাশবোর্ডের লেআউটের মতোই হোমপেজেও সেশন চেক ও রিফ্রেশ টোকেন রিকভার করা হচ্ছে
+  // হোমপেজে সরাসরি সেশন চেক এবং ইউজার ডেটা ফেচ একসাথে হ্যান্ডেল করা
   useEffect(() => {
     const verifySession = async () => {
-      const currentToken = useAuthStore.getState().accessToken;
+      try {
+        let token = useAuthStore.getState().accessToken;
 
-      if (!currentToken) {
-        try {
+        // ১. যদি টোকেন না থাকে, সাইলেন্ট রিফ্রেশ কল করো
+        if (!token) {
           const res: any = await api.post('/auth/refresh', {});
           if (res?.accessToken) {
             setAccessToken(res.accessToken);
+            token = res.accessToken;
           }
-        } catch (err) {
-          // হোমপেজে রিফ্রেশ ফেল করলে লগইন পেজে রিডায়রেক্ট করার দরকার নেই, কারণ এটি পাবলিক রুট। 
-          // শুধু সেশন নেই ধরে নরমালি লোডিং শেষ করে দেবো।
-          console.log('No active session found');
         }
+
+        // ২. টোকেন পাওয়ার সাথে সাথেই ইউজারের প্রোফাইল ফেচ করে নাও (useUser() এর ভরসায় না থেকে)
+        if (token) {
+          const userRes: any = await api.get('/auth/profile');
+          setCurrentUser(userRes?.user || userRes);
+        }
+      } catch (err) {
+        console.log('No active session found');
+        setCurrentUser(null);
+      } finally {
+        setIsCheckingAuth(false);
       }
-      setIsCheckingAuth(false);
     };
 
     verifySession();
@@ -68,8 +76,7 @@ export default function HomePage() {
                 <Loader2 className="w-4 h-4 animate-spin text-indigo-600" />
                 <span className="text-xs">Checking...</span>
               </div>
-            ) : (user || useAuthStore.getState().accessToken) ? (
-              // ২. ইউজার বা টোকেন যেটাই পাক না কেন, পেজ রিফ্রেশ হলেও এই পার্ট রেন্ডার হবে
+            ) : currentUser ? (
               <>
                 <Link
                   href="/dashboard"
@@ -80,7 +87,6 @@ export default function HomePage() {
                 <LogoutButton />
               </>
             ) : (
-              // ৩. যদি পাকাপোক্তভাবে সেশন না থাকে, তবেই শুধু লগইন দেখাবে
               <Link
                 href="/login"
                 className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white px-3 py-2 transition-colors"
