@@ -15,7 +15,7 @@ export default function HomePage() {
   const { user, loading } = useUser();
   const setAccessToken = useAuthStore((state) => state.setAccessToken);
 
-  // পেজ লোড হওয়ার সাথে সাথে যদি কুকি থাকে কিন্তু Zustand এ টোকেন না থাকে, তবে সাইলেন্ট রিফ্রেশ করে টোকেন রিকভার করবে
+  // পেজ লোড হওয়ার সাথে সাথে যদি কুকি থাকে কিন্তু Zustand এ টোকেন না থাকে, তবে সাইলেন্ট রিফ্রেশ করে টোকেন রিকভার করবে
   useEffect(() => {
     const checkAuthSession = async () => {
       const currentToken = useAuthStore.getState().accessToken;
@@ -24,11 +24,8 @@ export default function HomePage() {
           const res: any = await api.post('/auth/refresh', {});
           if (res?.accessToken) {
             setAccessToken(res.accessToken);
-            // রিফ্রেশ সফল হলে পেজ রিলোড বা স্টেট সিঙ্ক করার জন্য প্রয়োজন হলে উইন্ডো রিফ্রেশ বা রাউটার রিফ্রেশ দিতে পারো
-            window.location.reload();
           }
         } catch (err) {
-          // রিফ্রেশ টোকেন না থাকলে বা মেয়াদ শেষ হলে ইউজার লগড আউট অবস্থায় থাকবে
           console.log('No active session found');
         }
       }
