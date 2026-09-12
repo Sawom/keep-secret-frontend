@@ -3,7 +3,7 @@
 import ThemeToggle from '@/components/ThemeToggle';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Lock, Sparkles, KeyRound, EyeOff, ArrowRight, LogOut, FileText, Layers, Cpu } from 'lucide-react';
+import { Lock, Sparkles, KeyRound, EyeOff, ArrowRight, Loader2, FileText, Layers, Cpu } from 'lucide-react';
 import { useUser } from '@/hooks/useUser';
 import LogoutButton from '@/components/LogoutButton';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -11,11 +11,12 @@ import { api } from '@/services/api';
 
 export default function HomePage() {
   const [typedText, setTypedText] = useState('Project KeepSecret: Zero-knowledge architecture implementation in progress...');
+  const [isInitializing, setIsInitializing] = useState(true); // সাইলেন্ট রিফ্রেশ চেক শেষ হওয়া পর্যন্ত ট্র্যাক করার জন্য
 
   const { user, loading } = useUser();
   const setAccessToken = useAuthStore((state) => state.setAccessToken);
 
-  // পেজ লোড হওয়ার সাথে সাথে যদি কুকি থাকে কিন্তু Zustand এ টোকেন না থাকে, তবে সাইলেন্ট রিফ্রেশ করে টোকেন রিকভার করবে
+  // পেজ লোড বা রিফ্রেশের সাথে সাথে কুকি থেকে টোকেন রিকভার করা
   useEffect(() => {
     const checkAuthSession = async () => {
       const currentToken = useAuthStore.getState().accessToken;
@@ -29,6 +30,7 @@ export default function HomePage() {
           console.log('No active session found');
         }
       }
+      setIsInitializing(false); // চেক শেষ, এবার ইউজার ইন্টারফেস রেন্ডার হতে পারবে
     };
 
     checkAuthSession();
@@ -56,8 +58,12 @@ export default function HomePage() {
             {/* Theme Toggle Button */}
             <ThemeToggle />
 
-            {loading ? (
-              <div className="text-sm text-slate-400">Loading...</div>
+            {/* সাইলেন্ট রিফ্রেশ বা ইউজার স্ট্যাটাস চেক চলাকালীন সময়ের জন্য লোডিং স্পিনার হোল্ড করবে */}
+            {isInitializing || loading ? (
+              <div className="flex items-center gap-2 text-sm text-slate-400 px-3 py-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Loading...</span>
+              </div>
             ) : user ? (
               <>
                 <Link
@@ -77,7 +83,6 @@ export default function HomePage() {
                 >
                   Login
                 </Link>
-
               </>
             )}
 
