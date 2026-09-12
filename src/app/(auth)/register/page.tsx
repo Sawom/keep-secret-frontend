@@ -32,7 +32,7 @@ export default function RegisterPage() {
             // সফলভাবে রেজিস্টার হলে লগইন পেজে রিডাইরেক্ট করে দেবো
             router.push('/login?registered=true');
         } catch (err: any) {
-            setError(err.message || 'Registration failed. Please try again.');
+            setError( err?.response?.data?.message ||  err.message || 'Registration failed. Please try again.');
         } finally {
             setLoading(false);
         }
