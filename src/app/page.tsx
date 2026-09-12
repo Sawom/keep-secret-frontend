@@ -11,15 +11,17 @@ import { api } from '@/services/api';
 
 export default function HomePage() {
   const [typedText, setTypedText] = useState('Project KeepSecret: Zero-knowledge architecture implementation in progress...');
-  const [isInitializing, setIsInitializing] = useState(true); // সাইলেন্ট রিফ্রেশ চেক শেষ হওয়া পর্যন্ত ট্র্যাক করার জন্য
+
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true); // ড্যাশবোর্ডের মতো সেইম স্টেট নাম ব্যবহার করলাম
 
   const { user, loading } = useUser();
   const setAccessToken = useAuthStore((state) => state.setAccessToken);
 
-  // পেজ লোড বা রিফ্রেশের সাথে সাথে কুকি থেকে টোকেন রিকভার করা
+  // ড্যাশবোর্ডের লেআউটের মতোই হোমপেজেও সেশন চেক ও রিফ্রেশ টোকেন রিকভার করা হচ্ছে
   useEffect(() => {
-    const checkAuthSession = async () => {
+    const verifySession = async () => {
       const currentToken = useAuthStore.getState().accessToken;
+
       if (!currentToken) {
         try {
           const res: any = await api.post('/auth/refresh', {});
@@ -27,13 +29,15 @@ export default function HomePage() {
             setAccessToken(res.accessToken);
           }
         } catch (err) {
+          // হোমপেজে রিফ্রেশ ফেল করলে লগইন পেজে রিডায়রেক্ট করার দরকার নেই, কারণ এটি পাবলিক রুট। 
+          // শুধু সেশন নেই ধরে নরমালি লোডিং শেষ করে দেবো।
           console.log('No active session found');
         }
       }
-      setIsInitializing(false); // চেক শেষ, এবার ইউজার ইন্টারফেস রেন্ডার হতে পারবে
+      setIsCheckingAuth(false);
     };
 
-    checkAuthSession();
+    verifySession();
   }, [setAccessToken]);
 
   return (
@@ -58,13 +62,13 @@ export default function HomePage() {
             {/* Theme Toggle Button */}
             <ThemeToggle />
 
-            {/* সাইলেন্ট রিফ্রেশ বা ইউজার স্ট্যাটাস চেক চলাকালীন সময়ের জন্য লোডিং স্পিনার হোল্ড করবে */}
-            {isInitializing || loading ? (
+            {/* ড্যাশবোর্ডের মতো এখানেও টোকেন চেক শেষ না হওয়া পর্যন্ত লোডিং দেখাবে যাতে ফ্লিকার না করে */}
+            {isCheckingAuth || loading ? (
               <div className="flex items-center gap-2 text-sm text-slate-400 px-3 py-2">
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="w-4 h-4 animate-spin text-indigo-600" />
                 <span>Loading...</span>
               </div>
-            ) : user ? (
+            ) : (useAuthStore.getState().accessToken || user) ? (
               <>
                 <Link
                   href="/dashboard"
