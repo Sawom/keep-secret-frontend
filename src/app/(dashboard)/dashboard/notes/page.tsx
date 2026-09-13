@@ -1,6 +1,5 @@
 'use client';
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { noteService } from '@/services/note.service';
 import { Pin, Trash2, Palette, Loader2, SearchX, GripVertical } from 'lucide-react';
@@ -14,7 +13,8 @@ interface Note {
     updatedAt: string;
 }
 
-export default function NotesPage() {
+// আসল নোট পেজের লজিক ও ইউআই অংশ
+function NotesContent() {
     const [notes, setNotes] = useState<Note[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -33,7 +33,7 @@ export default function NotesPage() {
             const response: any = await noteService.getNotes();
             const notesData = Array.isArray(response) ? response : response?.data || response?.notes || [];
 
-            // পিন করা নোটগুলো সবসময় ওপরে এবং রিসেন্ট নোটগুলো সাজিয়ে রাখা
+            // পিন করা নোটগুলো সবসময় ওপরে এবং রিসেন্ট নোটগুলো সাজিয়ে রাখা
             const sortedNotes = notesData.sort((a: Note, b: Note) => {
                 if (a.isPinned === b.isPinned) {
                     return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
@@ -74,7 +74,7 @@ export default function NotesPage() {
                 note.id === id ? { ...note, isPinned: !currentPinned } : note
             );
 
-            // পিন স্টেট চেঞ্জ হওয়ার সাথে সাথে রি-সর্ট করা
+            // পিন স্টেট চেঞ্জ হওয়ার সাথে সাথে রি-সর্ট করা
             updated.sort((a, b) => {
                 if (a.isPinned === b.isPinned) return 0;
                 return a.isPinned ? -1 : 1;
@@ -218,5 +218,20 @@ export default function NotesPage() {
                 </div>
             )}
         </div>
+    );
+}
+
+// মূল এক্সপোর্ট পেজ যা Suspense দিয়ে মোড়ানো থাকবে (Vercel Build Error এড়ানোর জন্য)
+export default function NotesPage() {
+    return (
+        <Suspense
+            fallback={
+                <div className="flex justify-center items-center h-64">
+                    <Loader2 className="w-8 h-8 animate-spin text-amber-600" />
+                </div>
+            }
+        >
+            <NotesContent />
+        </Suspense>
     );
 }

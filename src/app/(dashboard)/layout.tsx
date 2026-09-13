@@ -9,6 +9,7 @@ import LogoutButton from '@/components/LogoutButton';
 import { useAuthStore } from '@/store/useAuthStore';
 import { api } from '@/services/api';
 import { noteService } from '@/services/note.service';
+import SearchBar from '@/components/SearchBar';
 
 export default function DashboardGroupLayout({
     children,
@@ -136,35 +137,7 @@ export default function DashboardGroupLayout({
                 {/* Center / Right: Search & Profile/Settings */}
                 <div className="flex items-center gap-2">
                     {/* Search Icon & Expandable Input */}
-                    <div className="relative flex items-center">
-                        {isSearchOpen ? (
-                            <div className="flex items-center bg-zinc-100 dark:bg-zinc-800 rounded-lg px-3 py-1.5 w-48 sm:w-72 transition-all">
-                                <Search className="w-4 h-4 text-zinc-400 mr-2 min-w-[16px]" />
-                                <input
-                                    type="text"
-                                    placeholder="Search..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    autoFocus
-                                    className="bg-transparent border-none outline-none text-sm text-zinc-800 dark:text-zinc-100 w-full"
-                                />
-                                <button
-                                    onClick={() => { setIsSearchOpen(false); setSearchQuery(''); }}
-                                    className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-full text-zinc-400 hover:text-zinc-600"
-                                >
-                                    <X className="w-4 h-4" />
-                                </button>
-                            </div>
-                        ) : (
-                            <button
-                                onClick={() => setIsSearchOpen(true)}
-                                className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-600 dark:text-zinc-300 transition-colors"
-                                title="Search"
-                            >
-                                <Search className="w-5 h-5" />
-                            </button>
-                        )}
-                    </div>
+                    <SearchBar />
 
                     <Link
                         href="/dashboard/profile"
