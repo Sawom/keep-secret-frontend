@@ -8,6 +8,7 @@ import ThemeToggle from '@/components/ThemeToggle';
 import LogoutButton from '@/components/LogoutButton';
 import { useAuthStore } from '@/store/useAuthStore';
 import { api } from '@/services/api';
+import { noteService } from '@/services/note.service';
 
 export default function DashboardGroupLayout({
     children,
@@ -15,7 +16,10 @@ export default function DashboardGroupLayout({
     children: React.ReactNode;
 }) {
     const pathname = usePathname();
-    // const router = useRouter();
+
+    // note saving
+    const [isSaving, setIsSaving] = useState(false);
+    // auth checking
     const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
     // Google Keep States
@@ -62,6 +66,41 @@ export default function DashboardGroupLayout({
             </div>
         );
     }
+
+    // note savings function
+    const handleSaveNote = async () => {
+        // যদি টাইটেল ও বডি দুটোই খালি থাকে, তবে শুধু বক্স বন্ধ করে দেব
+        if (!noteTitle.trim() && !noteBody.trim()) {
+            setIsNoteExpanded(false);
+            return;
+        }
+
+        try {
+            setIsSaving(true);
+
+            // ব্যাকএন্ডের CreateNoteDto ও তোমার noteService অনুযায়ী ডেটা পাঠানো হচ্ছে
+            await noteService.createNote({
+                title: noteTitle.trim() || 'Untitled Note',
+                content: noteBody.trim(),
+                iv: 'mock-iv-placeholder',       // ক্রিপ্টো লজিক যুক্ত হলে এখানে রিয়েল IV বসবে
+                authTag: 'mock-auth-tag-placeholder', // ক্রিপ্টো লজিক যুক্ত হলে এখানে রিয়েল AuthTag বসবে
+                color: '#FFFFFF',
+                isPinned: false
+            });
+
+            // সফলভাবে সেভ হওয়ার পর ইনপুট ক্লিয়ার করে বক্স বন্ধ করা
+            setNoteTitle('');
+            setNoteBody('');
+            setIsNoteExpanded(false);
+
+            // অপশনাল: পেজে নোট লিস্ট রিলোড করার জন্য কোনো ইভেন্ট বা রাউটার রিফ্রেশ দিতে পারো
+            window.location.reload();
+        } catch (error) {
+            console.error('Failed to save note:', error);
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     const navItems = [
         { name: 'Notes', href: '/dashboard/notes', icon: Pin },
@@ -241,16 +280,19 @@ export default function DashboardGroupLayout({
                                         <div>
                                             {/* save button */}
                                             <button
+                                                onClick={handleSaveNote}
+                                                disabled={isSaving}
                                                 className="px-4 mx-4 py-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 text-sm font-medium rounded-lg transition-colors"
                                             >
-                                                <CheckSquare className="w-4 h-4" />
+                                                {/* <CheckSquare className="w-4 h-4" /> */}
+                                                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckSquare className="w-4 h-4" />}
                                             </button>
 
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     setIsNoteExpanded(false);
-                                                    // এখানে পরে অটো-সেভ বা সেভ লজিক যুক্ত করতে পারবে
+                                                    handleSaveNote();
                                                 }}
                                                 className="px-4 py-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 text-sm font-medium rounded-lg transition-colors"
                                             >
