@@ -91,11 +91,11 @@ export default function DashboardGroupLayout({
                     })}
                 </nav>
 
-                <div className="p-4 border-t border-zinc-200 dark:border-zinc-800">
+                <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 ">
                     <LogoutButton />
                 </div>
 
-                <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 space-y-2">
+                <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 space-y-3 mb-10 ">
                     <ThemeToggle />
                 </div>
             </aside>
