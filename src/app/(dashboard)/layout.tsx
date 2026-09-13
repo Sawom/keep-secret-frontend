@@ -64,7 +64,7 @@ export default function DashboardGroupLayout({
     }
 
     const navItems = [
-        { name: 'Notes', href: '/dashboard', icon: Pin },
+        { name: 'Notes', href: '/dashboard/notes', icon: Pin },
         { name: 'Reminders', href: '/dashboard/reminders', icon: Bell },
         { name: 'Edit labels', href: '/dashboard/labels', icon: Edit3 },
         { name: 'Archive', href: '/dashboard/archive', icon: Archive },
@@ -239,6 +239,7 @@ export default function DashboardGroupLayout({
                                         </div>
 
                                         <div>
+                                            {/* save button */}
                                             <button
                                                 className="px-4 mx-4 py-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 text-sm font-medium rounded-lg transition-colors"
                                             >
