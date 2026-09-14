@@ -3,6 +3,7 @@ import { useState, useEffect, Suspense, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { noteService } from '@/services/note.service';
 import { Pin, Trash2, Palette, Loader2, SearchX, GripVertical, Archive, MoreVertical, Bell, CheckSquare, UserPlus, ImageIcon } from 'lucide-react';
+import { useAuthStore } from '@/store/useAuthStore';
 
 interface Note {
     id: string;
@@ -17,6 +18,7 @@ interface Note {
 function NotesContent() {
     const [notes, setNotes] = useState<Note[]>([]);
     const [loading, setLoading] = useState(true);
+    const accessToken = useAuthStore((state) => state.accessToken);
 
     // ড্র্যাগ এন্ড ড্রপের জন্য স্টেট
     const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
@@ -116,9 +118,25 @@ function NotesContent() {
         }
     };
 
+    // পেজ লোড ও ইভেন্ট শোনার জন্য নতুন useEffect
     useEffect(() => {
+        if (!accessToken) return;
+
+        // ১. প্রথমবার নোট ফেচ করা
         fetchNotes();
-    }, []);
+
+        // ২. লেআউটে নতুন নোট সেভ হলে এই লিসেনার অটোমেটিক ফেচ করবে
+        const handleNoteSaved = () => {
+            fetchNotes();
+        };
+
+        window.addEventListener('note-saved', handleNoteSaved);
+
+        // ৩. ক্লিনআপ
+        return () => {
+            window.removeEventListener('note-saved', handleNoteSaved);
+        };
+    }, [accessToken]);
 
     // কনফার্মেশনের পর সফট ডিলিট হ্যান্ডলার
     const confirmDelete = async () => {

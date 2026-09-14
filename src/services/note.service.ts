@@ -1,6 +1,5 @@
 import { api } from "./api";
 
-
 export const noteService = {
     // ১. নতুন এনক্রিপ্টেড নোট তৈরি
     async createNote(data: {

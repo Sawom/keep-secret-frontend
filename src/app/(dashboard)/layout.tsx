@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
-import { usePathname, } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { Trash2, Edit3, Archive, Menu, Loader2, Pin, Settings, User, BookOpen, Bell, Image as ImageIcon, CheckSquare, Palette } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 import LogoutButton from '@/components/LogoutButton';
@@ -19,8 +19,8 @@ export default function DashboardGroupLayout({
     const pathname = usePathname();
     const setAccessToken = useAuthStore((state) => state.setAccessToken);
     // note saving
-    const [isSaving, setIsSaving] = useState(false);
-    const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+    // const [isSaving, setIsSaving] = useState(false);
+    // const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
     // auth checking
     const [isCheckingAuth, setIsCheckingAuth] = useState(true);
     // Google Keep States
@@ -30,6 +30,12 @@ export default function DashboardGroupLayout({
     const [isNoteExpanded, setIsNoteExpanded] = useState(false);
     const [noteTitle, setNoteTitle] = useState('');
     const [noteBody, setNoteBody] = useState('');
+
+    // handle save
+    // const router = useRouter();
+    const [isSaving, setIsSaving] = useState(false);
+    const isSavingRef = useRef(false); // ডাবল কল রোধ করার জন্য সিঙ্ক্রোনাস রেফারেন্স লক
+    const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
     // ড্যাশবোর্ড লেআউটে ঢোকার সাথেই সেশন ও রিফ্রেশ টোকেন চেক করা হচ্ছে
     useEffect(() => {
@@ -56,44 +62,20 @@ export default function DashboardGroupLayout({
     }, [setAccessToken]);
 
 
-    // ১০ সেকেন্ডের ডিবাউন্স অটো-সেভ ইফেক্ট (টাইটেল বা বডি পরিবর্তন হলেই টাইমার রিসেট হবে)
-    useEffect(() => {
-        // যদি বক্স ওপেন না থাকে বা টাইটেল-বডি খালি থাকে, তবে অটো-সেভ রান করবে না
-        if (!isNoteExpanded || (!noteTitle.trim() && !noteBody.trim())) return;
-
-        // আগের টাইমার ক্লিয়ার করা (যাতে প্রতি অক্ষরে নতুন করে ১০ সেকেন্ড কাউন্ট শুরু হয়)
-        if (autoSaveTimerRef.current) {
-            clearTimeout(autoSaveTimerRef.current);
-        }
-
-        // নতুন ১০ সেকেন্ডের (১০০০০ মিলিপ্রসেস) টাইমার সেট করা
-        autoSaveTimerRef.current = setTimeout(() => {
-            handleSaveNote();
-        }, 10000);
-
-        // ক্লিনআপ ফাংশন
-        return () => {
-            if (autoSaveTimerRef.current) {
-                clearTimeout(autoSaveTimerRef.current);
-            }
-        };
-    }, [noteTitle, noteBody, isNoteExpanded]);
-
-    // টোকেন ভেরিফাই না হওয়া পর্যন্ত লোডিং স্পিনার দেখাবে, যাতে হুট করে লগইন পেজে ফ্লিকার না করে
-    if (isCheckingAuth) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950">
-                <Loader2 className="w-8 h-8 animate-spin text-amber-600" />
-            </div>
-        );
-    }
-
-    // note savings function
+    // ১. মূল সেভ ফাংশন (আগে ডিফাইন করা হলো যাতে নিচে useEffect এ কল করলে কোনো এরর না দেয়)
     const handleSaveNote = async () => {
         if (!noteTitle.trim() && !noteBody.trim()) return;
+        if (isSavingRef.current || isSaving) return;
+
+        isSavingRef.current = true;
+        setIsSaving(true);
 
         try {
-            setIsSaving(true);
+            if (autoSaveTimerRef.current) {
+                clearTimeout(autoSaveTimerRef.current);
+                autoSaveTimerRef.current = null;
+            }
+
             await noteService.createNote({
                 title: noteTitle.trim() || 'Untitled Note',
                 content: noteBody.trim(),
@@ -102,13 +84,52 @@ export default function DashboardGroupLayout({
                 color: '#FFFFFF',
                 isPinned: false
             });
-            // নোট সফলভাবে সেভ হওয়ার পর চাইলে পেজ বা স্টেট আপডেট করতে পারো
+
+            setNoteTitle('');
+            setNoteBody('');
+            setIsNoteExpanded(false);
+
+            // কাস্টম ইভেন্টের মাধ্যমে নোটস পেজ ইনস্ট্যান্ট আপডেট হয়ে যাবে
+            window.dispatchEvent(new CustomEvent('note-saved'));
+
         } catch (error) {
-            console.error('Auto-save or save failed:', error);
+            console.error('Save failed:', error);
         } finally {
+            isSavingRef.current = false;
             setIsSaving(false);
         }
     };
+
+    // অটো-সেভ ডিবাউন্স ইফেক্ট (ইউজার টাইপ করা থামিয়ে ১০ সেকেন্ড অপেক্ষা করলেই সেভ হবে)
+    useEffect(() => {
+        // যদি অথ চেক চলতে থাকে অথবা বক্স খোলা না থাকলে রিটার্ন করবে
+        if (isCheckingAuth || !isNoteExpanded || (!noteTitle.trim() && !noteBody.trim())) return;
+
+        if (autoSaveTimerRef.current) {
+            clearTimeout(autoSaveTimerRef.current);
+        }
+
+        autoSaveTimerRef.current = setTimeout(() => {
+            handleSaveNote();
+        }, 10000);
+
+        return () => {
+            if (autoSaveTimerRef.current) {
+                clearTimeout(autoSaveTimerRef.current);
+            }
+        };
+    }, [noteTitle, noteBody, isNoteExpanded, isCheckingAuth]);
+
+
+    if (isCheckingAuth) {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-white gap-3">
+                <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
+                <p className="text-sm font-medium">Loading workspace...</p>
+            </div>
+        );
+    }
+
 
     const navItems = [
         { name: 'Notes', href: '/dashboard/notes', icon: Pin },
@@ -261,7 +282,15 @@ export default function DashboardGroupLayout({
                                         <div>
                                             {/* save button */}
                                             <button
-                                                onClick={handleSaveNote}
+                                                // onClick={handleSaveNote}
+                                                onClick={() => {
+                                                    // ম্যানুয়াল ক্লিক করলে অটো-সেভ টাইমার ক্লিয়ার করে দেব
+                                                    if (autoSaveTimerRef.current) {
+                                                        clearTimeout(autoSaveTimerRef.current);
+                                                        autoSaveTimerRef.current = null;
+                                                    }
+                                                    handleSaveNote();
+                                                }}
                                                 disabled={isSaving}
                                                 className="px-4 mx-4 py-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 text-sm font-medium rounded-lg transition-colors"
                                             >
