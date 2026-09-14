@@ -23,7 +23,7 @@ function NotesContent() {
 
     // ডিলিট কনফার্মেশন পপআপের জন্য স্টেট
     const [noteToDelete, setNoteToDelete] = useState<string | null>(null);
-
+    // এখানে কোনো সার্চ বার বা সার্চ ইনপুট নেই। এখানে শুধু URL থেকে সার্চ কুয়েরিটা ধরা হবে (useSearchParams) এবং ব্যাকএন্ড থেকে আনা নোটগুলোর সাথে ম্যাচ করে ফিল্টার করা হবে:
     const searchParams = useSearchParams();
     const searchQuery = searchParams.get('search')?.toLowerCase() || '';
 
