@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, } from 'next/navigation';
-import { Trash2, Edit3, Archive, Menu, Loader2, Pin, Settings, User, Search, X, Bell, Image as ImageIcon, CheckSquare, Palette } from 'lucide-react';
+import { Trash2, Edit3, Archive, Menu, Loader2, Pin, Settings, User, BookOpen, Bell, Image as ImageIcon, CheckSquare, Palette } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 import LogoutButton from '@/components/LogoutButton';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -25,8 +25,6 @@ export default function DashboardGroupLayout({
 
     // Google Keep States
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const [isSearchOpen, setIsSearchOpen] = useState(false);
-    const [searchQuery, setSearchQuery] = useState('');
 
     // Take a note modal states
     const [isNoteExpanded, setIsNoteExpanded] = useState(false);
@@ -105,10 +103,8 @@ export default function DashboardGroupLayout({
 
     const navItems = [
         { name: 'Notes', href: '/dashboard/notes', icon: Pin },
-        { name: 'Notebooks', href: '/dashboard/notebooks', icon: Pin },
+        { name: 'Notebooks', href: '/dashboard/notebooks', icon: BookOpen },
         { name: 'Reminders', href: '/dashboard/reminders', icon: Bell },
-        { name: 'Edit labels', href: '/dashboard/labels', icon: Edit3 },
-        { name: 'Archive', href: '/dashboard/archive', icon: Archive },
         { name: 'Trash', href: '/dashboard/trash', icon: Trash2 },
     ];
 
