@@ -105,6 +105,7 @@ export default function DashboardGroupLayout({
 
     const navItems = [
         { name: 'Notes', href: '/dashboard/notes', icon: Pin },
+        { name: 'Notebooks', href: '/dashboard/notebooks', icon: Pin },
         { name: 'Reminders', href: '/dashboard/reminders', icon: Bell },
         { name: 'Edit labels', href: '/dashboard/labels', icon: Edit3 },
         { name: 'Archive', href: '/dashboard/archive', icon: Archive },
@@ -231,6 +232,7 @@ export default function DashboardGroupLayout({
                                         onChange={(e) => setNoteTitle(e.target.value)}
                                         className="w-full bg-transparent border-none outline-none font-semibold text-zinc-800 dark:text-zinc-100 text-base"
                                         autoFocus
+                                        required
                                     />
 
                                     {/* Note Body Textarea with Max-Height and Scroll */}
@@ -240,6 +242,7 @@ export default function DashboardGroupLayout({
                                         onChange={(e) => setNoteBody(e.target.value)}
                                         rows={2}
                                         className="w-full bg-transparent border-none outline-none text-sm text-zinc-700 dark:text-zinc-300 resize-none max-h-50 overflow-y-[field-sizing:content] [field-sizing:content]"
+                                        required
                                     />
 
                                     {/* Footer Actions inside Expanded Note */}
