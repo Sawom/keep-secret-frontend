@@ -139,54 +139,63 @@ function NotesContent() {
                 </div>
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                    {filteredNotes.map((note, index) => (
-                        <div
-                            key={note.id}
-                            draggable
-                            onDragStart={() => handleDragStart(index)}
-                            onDragOver={(e) => handleDragOver(e, index)}
-                            onDragEnd={handleDragEnd}
-                            style={{ backgroundColor: note.color || 'transparent' }}
-                            className="group relative bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between cursor-default"
-                        >
-                            {/* Drag Handle & Pin Button */}
-                            <div className="absolute top-3 right-3 flex items-center gap-1">
-                                <span className="opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing text-zinc-400 p-1">
-                                    <GripVertical className="w-4 h-4" />
-                                </span>
-                                <button
-                                    onClick={() => handleTogglePin(note.id, note.isPinned)}
-                                    className={`p-1.5 rounded-full transition-opacity ${note.isPinned
-                                        ? 'opacity-100 text-amber-500 bg-amber-50 dark:bg-amber-950/50'
-                                        : 'opacity-0 group-hover:opacity-100 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
-                                        }`}
-                                    title={note.isPinned ? 'Unpin note' : 'Pin note'}
-                                >
-                                    <Pin className="w-4 h-4" />
-                                </button>
-                            </div>
+                    {filteredNotes.map((note, index) => {
+                        // কালারটি হোয়াইট বা ফাঁকা কি না তা নিখুঁতভাবে চেক করার জন্য
+                        const rawColor = note.color?.toLowerCase()?.trim();
+                        const isDefaultColor = !rawColor || rawColor === '#ffffff' || rawColor === '#fff' || rawColor === 'white' || rawColor === 'transparent';
 
-                            <div className="space-y-2 pr-12">
-                                <h3 className="font-semibold text-zinc-800 dark:text-zinc-100 text-base">
-                                    {note.title}
-                                </h3>
-                                <p className="text-zinc-600 dark:text-zinc-300 text-sm whitespace-pre-wrap line-clamp-6">
-                                    {note.content}
-                                </p>
-                            </div>
+                        return (
+                            <div
+                                key={note.id}
+                                draggable
+                                onDragStart={() => handleDragStart(index)}
+                                onDragOver={(e) => handleDragOver(e, index)}
+                                onDragEnd={handleDragEnd}
+                                style={{ backgroundColor: isDefaultColor ? undefined : note.color }}
+                                className={`group relative rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between cursor-default border ${isDefaultColor
+                                    ? 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800'
+                                    : 'border-black/10 dark:border-white/20 text-zinc-900 dark:text-zinc-100'
+                                    }`}
+                            >
+                                {/* Drag Handle & Pin Button */}
+                                <div className="absolute top-3 right-3 flex items-center gap-1">
+                                    <span className="opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing text-zinc-400 p-1">
+                                        <GripVertical className="w-4 h-4" />
+                                    </span>
+                                    <button
+                                        onClick={() => handleTogglePin(note.id, note.isPinned)}
+                                        className={`p-1.5 rounded-full transition-opacity ${note.isPinned
+                                            ? 'opacity-100 text-amber-500 bg-amber-50 dark:bg-amber-950/50'
+                                            : 'opacity-0 group-hover:opacity-100 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                                            }`}
+                                        title={note.isPinned ? 'Unpin note' : 'Pin note'}
+                                    >
+                                        <Pin className="w-4 h-4" />
+                                    </button>
+                                </div>
 
-                            {/* Card Footer Actions */}
-                            <div className="flex items-center justify-between pt-4 mt-4 border-t border-zinc-100 dark:border-zinc-800/60 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button
-                                    onClick={() => setNoteToDelete(note.id)}
-                                    className="p-1 hover:bg-red-50 dark:hover:bg-red-950/30 text-zinc-400 hover:text-red-600 rounded-full transition-colors"
-                                    title="Delete note"
-                                >
-                                    <Trash2 className="w-4 h-4" />
-                                </button>
+                                <div className="space-y-2 pr-12">
+                                    <h3 className="font-semibold text-zinc-800 dark:text-zinc-100 text-base">
+                                        {note.title}
+                                    </h3>
+                                    <p className="text-zinc-600 dark:text-zinc-300 text-sm whitespace-pre-wrap line-clamp-6">
+                                        {note.content}
+                                    </p>
+                                </div>
+
+                                {/* Card Footer Actions */}
+                                <div className="flex items-center justify-between pt-4 mt-4 border-t border-zinc-100 dark:border-zinc-800/60 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button
+                                        onClick={() => setNoteToDelete(note.id)}
+                                        className="p-1 hover:bg-red-50 dark:hover:bg-red-950/30 text-zinc-400 hover:text-red-600 rounded-full transition-colors"
+                                        title="Delete note"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
 

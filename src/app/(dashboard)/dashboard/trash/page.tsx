@@ -70,7 +70,7 @@ function TrashContent() {
         <div className="w-full space-y-6 relative">
             <div className="flex items-center justify-between px-2">
                 <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
-                    Trash Notes (Items in trash are permanently deleted after some time)
+                    Trash Notes (Items in trash are permanently deleted after 30 days)
                 </h2>
             </div>
 
@@ -82,41 +82,48 @@ function TrashContent() {
                 </div>
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                    {trashNotes.map((note) => (
-                        <div
-                            key={note.id}
-                            style={{ backgroundColor: note.color || 'transparent' }}
-                            className="group relative bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between"
-                        >
-                            <div className="space-y-2">
-                                <h3 className="font-semibold text-zinc-800 dark:text-zinc-100 text-base">
-                                    {note.title}
-                                </h3>
-                                <p className="text-zinc-600 dark:text-zinc-300 text-sm whitespace-pre-wrap line-clamp-6">
-                                    {note.content}
-                                </p>
+                    {trashNotes.map((note) => {
+                        const rawColor = note.color?.toLowerCase()?.trim();
+                        const isDefaultColor = !rawColor || rawColor === '#ffffff' || rawColor === '#fff' || rawColor === 'white' || rawColor === 'transparent';
+
+                        return (
+                            <div
+                                key={note.id}
+                                style={{ backgroundColor: isDefaultColor ? undefined : note.color }}
+                                className={`group relative rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between border ${isDefaultColor
+                                        ? 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800'
+                                        : 'border-black/10 dark:border-white/20 text-zinc-900 dark:text-zinc-100'
+                                    }`}
+                            >
+                                <div className="space-y-2">
+                                    <h3 className="font-semibold text-zinc-800 dark:text-zinc-100 text-base">
+                                        {note.title}
+                                    </h3>
+                                    <p className="text-zinc-600 dark:text-zinc-300 text-sm whitespace-pre-wrap line-clamp-6">
+                                        {note.content}
+                                    </p>
+                                </div>
+
+                                {/* কার্ডের নিচে রিস্টোর এবং পার্মানেন্ট ডিলিট বাটন */}
+                                <div className="flex items-center justify-between pt-4 mt-4 border-t border-zinc-100 dark:border-zinc-800/60">
+                                    <button
+                                        onClick={() => handleRestore(note.id)}
+                                        className="flex items-center gap-1 text-xs font-medium text-emerald-600 hover:text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1.5 rounded-lg transition-colors"
+                                        title="Restore note"
+                                    >
+                                        <RotateCcw className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                        onClick={() => setNoteToDeleteForever(note.id)}
+                                        className="p-2 text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors"
+                                        title="Delete Forever"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                </div>
                             </div>
-
-
-                            <div className="flex items-center justify-between pt-4 mt-4 border-t border-zinc-100 dark:border-zinc-800/60">
-                                <button
-                                    onClick={() => handleRestore(note.id)}
-                                    className="flex items-center gap-1 text-xs font-medium text-emerald-600 hover:text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1.5 rounded-lg transition-colors"
-                                    title="Restore note"
-                                >
-                                    <RotateCcw className="w-3.5 h-3.5" />
-                                </button>
-
-                                <button
-                                    onClick={() => setNoteToDeleteForever(note.id)}
-                                    className="flex items-center gap-1 text-xs font-medium text-red-600 hover:text-red-700 bg-red-50 dark:bg-red-950/40 px-2.5 py-1.5 rounded-lg transition-colors"
-                                    title="Delete forever"
-                                >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                            </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
 
