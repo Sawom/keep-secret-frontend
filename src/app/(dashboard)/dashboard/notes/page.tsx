@@ -1,8 +1,8 @@
 'use client';
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { noteService } from '@/services/note.service';
-import { Pin, Trash2, Palette, Loader2, SearchX, GripVertical } from 'lucide-react';
+import { Pin, Trash2, Palette, Loader2, SearchX, GripVertical, Archive, MoreVertical, Bell, CheckSquare, UserPlus, ImageIcon } from 'lucide-react';
 
 interface Note {
     id: string;
@@ -26,6 +26,73 @@ function NotesContent() {
     // এখানে কোনো সার্চ বার বা সার্চ ইনপুট নেই। এখানে শুধু URL থেকে সার্চ কুয়েরিটা ধরা হবে (useSearchParams) এবং ব্যাকএন্ড থেকে আনা নোটগুলোর সাথে ম্যাচ করে ফিল্টার করা হবে:
     const searchParams = useSearchParams();
     const searchQuery = searchParams.get('search')?.toLowerCase() || '';
+
+    // edit and save
+    const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+    const [editTitle, setEditTitle] = useState('');
+    const [editBody, setEditBody] = useState('');
+    const [isUpdating, setIsUpdating] = useState(false);
+    const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+    // কার্ডে ক্লিক করলে এডিট মোড ও মডাল ওপেন হবে
+    const handleStartEdit = (note: any) => {
+        setEditingNoteId(note.id);
+        setEditTitle(note.title || '');
+        setEditBody(note.content || '');
+    };
+
+    // সেভ এবং ক্লোজ করার ফাংশন
+    const handleSaveEdit = async () => {
+        if (!editingNoteId) return;
+        try {
+            setIsUpdating(true);
+            await noteService.updateNote(editingNoteId, {
+                title: editTitle,
+                content: editBody,
+            });
+
+            // লোকাল স্টেট আপডেট করা যাতে UI সাথে সাথে রিফ্লেক্ট করে
+            setNotes((prevNotes) =>
+                prevNotes.map((note) =>
+                    note.id === editingNoteId
+                        ? { ...note, title: editTitle, content: editBody, updatedAt: new Date().toISOString() }
+                        : note
+                )
+            );
+        } catch (error) {
+            console.error('Failed to update note:', error);
+        } finally {
+            setIsUpdating(false);
+        }
+    };
+
+    // ২. ১০ সেকেন্ডের ডিবাউন্স অটো-সেভ
+    useEffect(() => {
+        if (!editingNoteId) return;
+
+        if (autoSaveTimerRef.current) {
+            clearTimeout(autoSaveTimerRef.current);
+        }
+
+        autoSaveTimerRef.current = setTimeout(() => {
+            handleSaveEdit();
+        }, 10000); // ১০ সেকেন্ড
+
+        return () => {
+            if (autoSaveTimerRef.current) {
+                clearTimeout(autoSaveTimerRef.current);
+            }
+        };
+    }, [editTitle, editBody, editingNoteId]);
+
+    // ৩. ক্লোজ করার ফাংশন
+    const handleCloseModal = async () => {
+        if (autoSaveTimerRef.current) {
+            clearTimeout(autoSaveTimerRef.current); // টাইমার ক্লিয়ার করা
+        }
+        await handleSaveEdit(); // বন্ধ করার আগে ফাইনাল সেভ করে নেওয়া
+        setEditingNoteId(null); // মডাল বন্ধ করা
+    };
 
     const fetchNotes = async () => {
         try {
@@ -138,9 +205,9 @@ function NotesContent() {
                     <p className="text-xs text-zinc-400">Try searching with a different keyword.</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+
                     {filteredNotes.map((note, index) => {
-                        // কালারটি হোয়াইট বা ফাঁকা কি না তা নিখুঁতভাবে চেক করার জন্য
                         const rawColor = note.color?.toLowerCase()?.trim();
                         const isDefaultColor = !rawColor || rawColor === '#ffffff' || rawColor === '#fff' || rawColor === 'white' || rawColor === 'transparent';
 
@@ -151,8 +218,9 @@ function NotesContent() {
                                 onDragStart={() => handleDragStart(index)}
                                 onDragOver={(e) => handleDragOver(e, index)}
                                 onDragEnd={handleDragEnd}
+                                onClick={() => handleStartEdit(note)} // ক্লিক করলে কার্ডটি মডালে রূপান্তর হবে
                                 style={{ backgroundColor: isDefaultColor ? undefined : note.color }}
-                                className={`group relative rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between cursor-default border ${isDefaultColor
+                                className={`group relative rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between border cursor-pointer ${isDefaultColor
                                     ? 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800'
                                     : 'border-black/10 dark:border-white/20 text-zinc-900 dark:text-zinc-100'
                                     }`}
@@ -163,7 +231,10 @@ function NotesContent() {
                                         <GripVertical className="w-4 h-4" />
                                     </span>
                                     <button
-                                        onClick={() => handleTogglePin(note.id, note.isPinned)}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleTogglePin(note.id, note.isPinned);
+                                        }}
                                         className={`p-1.5 rounded-full transition-opacity ${note.isPinned
                                             ? 'opacity-100 text-amber-500 bg-amber-50 dark:bg-amber-950/50'
                                             : 'opacity-0 group-hover:opacity-100 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
@@ -183,10 +254,12 @@ function NotesContent() {
                                     </p>
                                 </div>
 
-                                {/* Card Footer Actions */}
                                 <div className="flex items-center justify-between pt-4 mt-4 border-t border-zinc-100 dark:border-zinc-800/60 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <button
-                                        onClick={() => setNoteToDelete(note.id)}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setNoteToDelete(note.id);
+                                        }}
                                         className="p-1 hover:bg-red-50 dark:hover:bg-red-950/30 text-zinc-400 hover:text-red-600 rounded-full transition-colors"
                                         title="Delete note"
                                     >
@@ -196,8 +269,106 @@ function NotesContent() {
                             </div>
                         );
                     })}
+
                 </div>
+
             )}
+
+            {/* edit component modal */}
+            {editingNoteId && (() => {
+                const activeNote = filteredNotes.find(n => n.id === editingNoteId);
+                if (!activeNote) return null;
+                const rawColor = activeNote?.color?.toLowerCase()?.trim();
+                const isDefaultColor = !rawColor || rawColor === '#ffffff' || rawColor === '#fff' || rawColor === 'white' || rawColor === 'transparent';
+
+                return (
+                    <div
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4"
+                    >
+                        <div
+                            style={{ backgroundColor: isDefaultColor ? undefined : activeNote?.color }}
+                            className={`relative w-full max-w-2xl rounded-2xl p-6 shadow-2xl space-y-4 border ${isDefaultColor
+                                ? 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100'
+                                : 'border-black/10 dark:border-white/20 text-zinc-900 dark:text-zinc-100'
+                                }`}
+                            onClick={(e) => e.stopPropagation()} // মডালের ভেতরে ক্লিক করলে যাতে বন্ধ না হয়ে যায়
+                        >
+                            {/* Top-Right Pin Button inside Modal */}
+                            <div className="absolute top-4 right-4">
+                                <button
+                                    type="button"
+                                    onClick={() => handleTogglePin(activeNote.id, activeNote.isPinned)}
+                                    className={`p-1.5 rounded-full transition-colors ${activeNote?.isPinned
+                                        ? 'text-amber-500 bg-amber-50 dark:bg-amber-950/50'
+                                        : 'text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                                        }`}
+                                    title={activeNote?.isPinned ? 'Unpin note' : 'Pin note'}
+                                >
+                                    <Pin className="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            {/* Note Title Input */}
+                            <input
+                                type="text"
+                                placeholder="Title"
+                                value={editTitle}
+                                onChange={(e) => setEditTitle(e.target.value)}
+                                className="w-full pr-10 bg-transparent border-none outline-none font-semibold text-zinc-800 dark:text-zinc-100 text-lg"
+                                autoFocus
+                                required
+                            />
+
+                            {/* Note Body Textarea */}
+                            <textarea
+                                placeholder="Take a note..."
+                                value={editBody}
+                                onChange={(e) => setEditBody(e.target.value)}
+                                rows={6}
+                                className="w-full bg-transparent border-none outline-none text-base text-zinc-700 dark:text-zinc-300 resize-none max-h-96 overflow-y-[field-sizing:content] [field-sizing:content]"
+                                required
+                            />
+
+                            {/* Footer Toolbar & Buttons */}
+                            <div className="flex items-center justify-between pt-3 border-t border-zinc-100 dark:border-zinc-800">
+                                <div className="flex items-center gap-1.5 text-zinc-500 dark:text-zinc-400">
+                                    <button type="button" className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full" title="Remind me"><Bell className="w-4 h-4" /></button>
+                                    <button type="button" className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full" title="Collaborator"><UserPlus className="w-4 h-4" /></button>
+                                    <button type="button" className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full" title="Change Color"><Palette className="w-4 h-4" /></button>
+                                    <button type="button" className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full" title="Add Image"><ImageIcon className="w-4 h-4" /></button>
+                                    <button type="button" className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full" title="Archive"><Archive className="w-4 h-4" /></button>
+                                    <button type="button" className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full" title="More"><MoreVertical className="w-4 h-4" /></button>
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                    {/* Save / Update Indicator */}
+                                    {isUpdating && <Loader2 className="w-4 h-4 animate-spin text-zinc-400" />}
+
+                                    {/* Save Button (ক্লিক করলে শুধু সেভ হবে, মডাল খোলা থাকবে) */}
+                                    <button
+                                        type="button"
+                                        onClick={handleSaveEdit}
+                                        disabled={isUpdating}
+                                        className="px-4 py-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 text-sm font-medium rounded-lg transition-colors cursor-pointer flex items-center gap-1.5"
+                                    >
+                                        <CheckSquare className="w-4 h-4" /> Save
+                                    </button>
+
+                                    {/* Close Button (ক্লিক করলে সেভ হয়ে মডাল বন্ধ হবে) */}
+                                    <button
+                                        type="button"
+                                        onClick={handleCloseModal}
+                                        disabled={isUpdating}
+                                        className="px-6 py-2 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 text-sm font-medium rounded-lg transition-colors cursor-pointer"
+                                    >
+                                        Close
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            })()}
 
             {/* Delete Confirmation Modal */}
             {noteToDelete && (

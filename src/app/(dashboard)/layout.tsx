@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, } from 'next/navigation';
 import { Trash2, Edit3, Archive, Menu, Loader2, Pin, Settings, User, BookOpen, Bell, Image as ImageIcon, CheckSquare, Palette } from 'lucide-react';
@@ -17,12 +17,12 @@ export default function DashboardGroupLayout({
     children: React.ReactNode;
 }) {
     const pathname = usePathname();
-
+    const setAccessToken = useAuthStore((state) => state.setAccessToken);
     // note saving
     const [isSaving, setIsSaving] = useState(false);
+    const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
     // auth checking
     const [isCheckingAuth, setIsCheckingAuth] = useState(true);
-
     // Google Keep States
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -30,8 +30,6 @@ export default function DashboardGroupLayout({
     const [isNoteExpanded, setIsNoteExpanded] = useState(false);
     const [noteTitle, setNoteTitle] = useState('');
     const [noteBody, setNoteBody] = useState('');
-
-    const setAccessToken = useAuthStore((state) => state.setAccessToken);
 
     // ড্যাশবোর্ড লেআউটে ঢোকার সাথেই সেশন ও রিফ্রেশ টোকেন চেক করা হচ্ছে
     useEffect(() => {
@@ -57,6 +55,30 @@ export default function DashboardGroupLayout({
         verifySession();
     }, [setAccessToken]);
 
+
+    // ১০ সেকেন্ডের ডিবাউন্স অটো-সেভ ইফেক্ট (টাইটেল বা বডি পরিবর্তন হলেই টাইমার রিসেট হবে)
+    useEffect(() => {
+        // যদি বক্স ওপেন না থাকে বা টাইটেল-বডি খালি থাকে, তবে অটো-সেভ রান করবে না
+        if (!isNoteExpanded || (!noteTitle.trim() && !noteBody.trim())) return;
+
+        // আগের টাইমার ক্লিয়ার করা (যাতে প্রতি অক্ষরে নতুন করে ১০ সেকেন্ড কাউন্ট শুরু হয়)
+        if (autoSaveTimerRef.current) {
+            clearTimeout(autoSaveTimerRef.current);
+        }
+
+        // নতুন ১০ সেকেন্ডের (১০০০০ মিলিপ্রসেস) টাইমার সেট করা
+        autoSaveTimerRef.current = setTimeout(() => {
+            handleSaveNote();
+        }, 10000);
+
+        // ক্লিনআপ ফাংশন
+        return () => {
+            if (autoSaveTimerRef.current) {
+                clearTimeout(autoSaveTimerRef.current);
+            }
+        };
+    }, [noteTitle, noteBody, isNoteExpanded]);
+
     // টোকেন ভেরিফাই না হওয়া পর্যন্ত লোডিং স্পিনার দেখাবে, যাতে হুট করে লগইন পেজে ফ্লিকার না করে
     if (isCheckingAuth) {
         return (
@@ -68,34 +90,21 @@ export default function DashboardGroupLayout({
 
     // note savings function
     const handleSaveNote = async () => {
-        // যদি টাইটেল ও বডি দুটোই খালি থাকে, তবে শুধু বক্স বন্ধ করে দেব
-        if (!noteTitle.trim() && !noteBody.trim()) {
-            setIsNoteExpanded(false);
-            return;
-        }
+        if (!noteTitle.trim() && !noteBody.trim()) return;
 
         try {
             setIsSaving(true);
-
-            // ব্যাকএন্ডের CreateNoteDto ও তোমার noteService অনুযায়ী ডেটা পাঠানো হচ্ছে
             await noteService.createNote({
                 title: noteTitle.trim() || 'Untitled Note',
                 content: noteBody.trim(),
-                iv: 'mock-iv-placeholder',       // ক্রিপ্টো লজিক যুক্ত হলে এখানে রিয়েল IV বসবে
-                authTag: 'mock-auth-tag-placeholder', // ক্রিপ্টো লজিক যুক্ত হলে এখানে রিয়েল AuthTag বসবে
+                iv: 'mock-iv-placeholder',
+                authTag: 'mock-auth-tag-placeholder',
                 color: '#FFFFFF',
                 isPinned: false
             });
-
-            // সফলভাবে সেভ হওয়ার পর ইনপুট ক্লিয়ার করে বক্স বন্ধ করা
-            setNoteTitle('');
-            setNoteBody('');
-            setIsNoteExpanded(false);
-
-            // অপশনাল: পেজে নোট লিস্ট রিলোড করার জন্য কোনো ইভেন্ট বা রাউটার রিফ্রেশ দিতে পারো
-            window.location.reload();
+            // নোট সফলভাবে সেভ হওয়ার পর চাইলে পেজ বা স্টেট আপডেট করতে পারো
         } catch (error) {
-            console.error('Failed to save note:', error);
+            console.error('Auto-save or save failed:', error);
         } finally {
             setIsSaving(false);
         }
@@ -261,12 +270,14 @@ export default function DashboardGroupLayout({
                                             </button>
 
                                             <button
-                                                onClick={(e) => {
+                                                type="button"
+                                                onClick={async (e) => {
                                                     e.stopPropagation();
-                                                    setIsNoteExpanded(false);
-                                                    handleSaveNote();
+                                                    await handleSaveNote(); // আগে সেভ হবে
+                                                    setIsNoteExpanded(false); // তারপর বক্স বন্ধ হবে
                                                 }}
-                                                className="px-4 py-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 text-sm font-medium rounded-lg transition-colors"
+                                                disabled={isSaving}
+                                                className="px-4 py-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 text-sm font-medium rounded-lg transition-colors cursor-pointer"
                                             >
                                                 Close
                                             </button>
@@ -275,6 +286,7 @@ export default function DashboardGroupLayout({
                                     </div>
                                 </div>
                             )}
+
                         </div>
                     </div>
 
