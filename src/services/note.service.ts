@@ -5,8 +5,6 @@ export const noteService = {
     async createNote(data: {
         title: string;
         content: string;
-        iv: string;
-        authTag: string;
         color?: string;
         isPinned?: boolean;
         notebookId?: string;
@@ -21,8 +19,19 @@ export const noteService = {
         return await api.get(url);
     },
 
+    // ৩. নির্দিষ্ট একটি নোট আইডি দিয়ে ফেচ করা (ব্যাকএন্ডের findOne এর সাথে ম্যাচ করার জন্য এটি নতুন যোগ করা হলো)
+    async getNoteById(id: string) {
+        return await api.get(`/notes/${id}`);
+    },
+
     // ৩. নির্দিষ্ট নোট আপডেট করা
-    async updateNote(id: string, data: any) {
+    async updateNote(id: string, data: {
+        title?: string;
+        content?: string;
+        color?: string;
+        isPinned?: boolean;
+        notebookId?: string;
+    }) {
         return await api.patch(`/notes/${id}`, data);
     },
 
