@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { authService } from '@/services/auth.service';
 import { Lock, Mail, ArrowRight, Loader2 } from 'lucide-react';
@@ -14,6 +14,7 @@ function LoginForm() {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const router = useRouter();
 
     const setAccessToken = useAuthStore((state) => state.setAccessToken);
     const setUser = useAuthStore((state) => state.setUser);
@@ -33,8 +34,7 @@ function LoginForm() {
             // Zustand স্টেটে টোকেন ও ইউজার সেভ করা
             setAccessToken(response.accessToken);
             setUser(response.user);
-
-            window.location.href = callbackUrl;
+            router.push(callbackUrl);
         } catch (err: any) {
             setError(
                 err?.response?.data?.message ||
