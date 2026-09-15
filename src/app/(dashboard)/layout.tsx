@@ -79,8 +79,6 @@ export default function DashboardGroupLayout({
             await noteService.createNote({
                 title: noteTitle.trim() || 'Untitled Note',
                 content: noteBody.trim(),
-                iv: 'mock-iv-placeholder',
-                authTag: 'mock-auth-tag-placeholder',
                 color: '#FFFFFF',
                 isPinned: false
             });
