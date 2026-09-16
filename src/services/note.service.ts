@@ -54,4 +54,5 @@ export const noteService = {
     async permanentDeleteNote(id: string) {
         return await api.delete(`/notes/${id}`);
     }
+    
 };
