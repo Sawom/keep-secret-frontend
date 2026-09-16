@@ -24,7 +24,7 @@ export const noteService = {
         return await api.get(`/notes/${id}`);
     },
 
-    // ৩. নির্দিষ্ট নোট আপডেট করা
+    // ৮. নির্দিষ্ট নোট আপডেট করা
     async updateNote(id: string, data: {
         title?: string;
         content?: string;
@@ -53,6 +53,11 @@ export const noteService = {
     // ৭. পার্মানেন্ট ডিলিট করা
     async permanentDeleteNote(id: string) {
         return await api.delete(`/notes/${id}`);
-    }
-    
+    },
+
+    // ৯. নোটসের ট্র্যাশ সম্পূর্ণ খালি করা (Empty Trash) - এটি যোগ করতে হবে
+    async emptyTrash() {
+        return await api.delete('/notes/trash/empty');
+    },
+
 };
