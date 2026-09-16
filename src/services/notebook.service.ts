@@ -47,22 +47,27 @@ export const notebookService = {
 
     // নোটবুক ট্র্যাশে পাঠানো (Soft Delete)
     async softDeleteNotebook(id: string): Promise<Notebook> {
-        return await api.patch(`/notes/${id}/trash`);
+        return await api.patch(`/notebooks/${id}/trash`);
     },
 
     // ট্র্যাশে থাকা সব নোটবুক নিয়ে আসা
     async getTrashNotebooks(): Promise<Notebook[]> {
-        return await api.get('/notes/trash');
+        return await api.get('/notebooks/trash');
     },
 
     // ট্র্যাশ থেকে নোটবুক রিস্টোর করা
     async restoreNotebook(id: string): Promise<Notebook> {
-        return await api.patch(`/notes/${id}/restore`);
+        return await api.patch(`/notebooks/${id}/restore`);
     },
 
-    // নোটবুকের ট্র্যাশ সম্পূর্ণ খালি করা (Empty Trash)
+    // নোটবুকের ট্র্যাশ সম্পূর্ণ খালি করা -> রাউট হবে /notebooks/trash/empty
     async emptyTrash(): Promise<{ message: string; count: number }> {
-        return await api.delete('/notes/${id}');
+        return await api.delete('/notebooks/trash/empty');
     },
+
+    // নির্দিষ্ট নোটবুক স্থায়ীভাবে ডিলিট করা (Hard Delete)
+    async permanentDeleteNotebook(id: string): Promise<{ message: string }> {
+        return await api.delete(`/notebooks/${id}`);
+    }
 
 };
