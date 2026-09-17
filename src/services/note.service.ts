@@ -60,4 +60,16 @@ export const noteService = {
         return await api.delete('/notes/trash/empty');
     },
 
+    // ১০. ড্র্যাগ এন্ড ড্রপের পর নোটগুলোর পজিশন আপডেট করা
+    async reorderNotes(
+        items: {
+            id: string;
+            position: number;
+        }[],
+    ) {
+        return await api.patch('/notes/reorder', {
+            items,
+        });
+    }
+
 };

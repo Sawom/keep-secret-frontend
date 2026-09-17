@@ -19,6 +19,11 @@ export function useNotes() {
 
     // ড্র্যাগ এন্ড ড্রপের জন্য স্টেট
     const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
+    const notesRef = useRef<Note[]>([]);
+    const draggedItemIndexRef = useRef<number | null>(null);
+    const originalNotesRef = useRef<Note[]>([]);
+    const isReorderingRef = useRef(false);
+
     // ডিলিট কনফার্মেশন পপআপের জন্য স্টেট
     const [noteToDelete, setNoteToDelete] = useState<string | null>(null);
 
@@ -163,26 +168,82 @@ export function useNotes() {
         }
     };
 
-    // ড্র্যাগ এন্ড ড্রপ লজিক
+    // ড্র্যাগ শুরু হলে ইডেক্স সেট করা, এখানে API call হচ্ছে না। শুধু কোন item drag হচ্ছে সেটা memory-তে রাখা হচ্ছে।
     const handleDragStart = (index: number) => {
+        originalNotesRef.current = [...notes];
+        draggedItemIndexRef.current = index;
+
+        notesRef.current = [...notes];
+
         setDraggedItemIndex(index);
     };
 
-    const handleDragOver = (e: React.DragEvent, index: number) => {
+    // ড্র্যাগ করার সময় নোটগুলোর লোকাল স্টেট ইনস্ট্যান্ট রিঅর্ডার করা, এটাই মূল smooth reorder function।
+    // কেন setNotes() functional form? ব্যবহার করেছি যাতে rapid dragover event-এর সময় stale state-এর সমস্যা না হয়। 
+    // Drag & drop-এর সময় browser খুব দ্রুত অনেক dragover event fire করতে পারে।
+    const handleDragOver = (
+        e: React.DragEvent,
+        index: number,
+    ) => {
         e.preventDefault();
-        if (draggedItemIndex === null || draggedItemIndex === index) return;
 
-        const updatedNotes = [...notes];
-        const draggedItem = updatedNotes[draggedItemIndex];
-        updatedNotes.splice(draggedItemIndex, 1);
-        updatedNotes.splice(index, 0, draggedItem);
+        const currentIndex = draggedItemIndexRef.current;
 
-        setDraggedItemIndex(index);
+        if (currentIndex === null || currentIndex === index) {
+            return;
+        }
+
+        const updatedNotes = [...notesRef.current];
+
+        const draggedNote = updatedNotes[currentIndex];
+
+        if (!draggedNote) return;
+
+        updatedNotes.splice(currentIndex, 1);
+        updatedNotes.splice(index, 0, draggedNote);
+
+        // Ref immediately update
+        notesRef.current = updatedNotes;
+
+        // UI immediately update
         setNotes(updatedNotes);
+
+        draggedItemIndexRef.current = index;
+        setDraggedItemIndex(index);
     };
 
-    const handleDragEnd = () => {
+    // ড্র্যাগ শেষ হলে নতুন পজিশন ব্যাকএন্ডে সেভ করা
+    const handleDragEnd = async () => {
+        if (draggedItemIndexRef.current === null) {
+            return;
+        }
+
+        // Drag শেষ
+        draggedItemIndexRef.current = null;
         setDraggedItemIndex(null);
+
+        const currentNotes = notesRef.current;
+
+        try {
+            isReorderingRef.current = true;
+
+            const reorderItems = currentNotes.map((note, index) => ({
+                id: note.id,
+                position: index,
+            }));
+
+            await noteService.reorderNotes(reorderItems);
+        } catch (error) {
+            console.error('Failed to save note order:', error);
+
+            // Backend save fail করলে আগের order restore
+            const originalNotes = originalNotesRef.current;
+
+            notesRef.current = originalNotes;
+            setNotes(originalNotes);
+        } finally {
+            isReorderingRef.current = false;
+        }
     };
 
     return {

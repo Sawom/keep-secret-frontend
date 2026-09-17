@@ -7,7 +7,17 @@ import { Folder, Plus, Trash2, Edit3, BookOpen, Loader2, GripVertical } from 'lu
 import Link from 'next/link';
 
 export default function NotebooksPage() {
-    const { notebooks, loading, createNotebook, updateNotebook, softDeleteNotebook } = useNotebooks();
+    const {
+        notebooks,
+        loading,
+        createNotebook,
+        updateNotebook,
+        softDeleteNotebook,
+        handleNotebookDragStart,
+        handleNotebookDragOver,
+        handleNotebookDragEnd,
+        draggedNotebookIndex,
+    } = useNotebooks();
 
     // মোডাল স্টেট
     const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
@@ -20,39 +30,6 @@ export default function NotebooksPage() {
     const [description, setDescription] = useState('');
     const [color, setColor] = useState('#3B82F6');
     const [submitting, setSubmitting] = useState(false);
-
-    // ড্র্যাগ এন্ড ড্রপের জন্য লোকাল স্টেট
-    const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
-    const [localNotebooks, setLocalNotebooks] = useState<Notebook[]>([]);
-
-    // হুক থেকে আসা ডেটা লোকাল স্টেটে সিংক করে রাখা যাতে ড্র্যাগ করার সময় ইনস্ট্যান্ট ইউআই আপডেট হয়
-    // (যদি localNotebooks খালি থাকে, তবে হুকের ডেটা দিয়ে ইনিশিয়ালাইজ হবে)
-    const displayNotebooks = localNotebooks.length > 0 || notebooks.length !== localNotebooks.length
-        ? (localNotebooks.length > 0 && localNotebooks.length === notebooks.length ? localNotebooks : notebooks)
-        : notebooks;
-
-    // ড্র্যাগ এন্ড ড্রপ হ্যান্ডলারসমূহ
-    const handleDragStart = (index: number) => {
-        setDraggedItemIndex(index);
-    };
-
-    const handleDragOver = (e: React.DragEvent, index: number) => {
-        e.preventDefault();
-        if (draggedItemIndex === null || draggedItemIndex === index) return;
-
-        const updated = [...(localNotebooks.length > 0 ? localNotebooks : notebooks)];
-        const draggedItem = updated[draggedItemIndex];
-        updated.splice(draggedItemIndex, 1);
-        updated.splice(index, 0, draggedItem);
-
-        setDraggedItemIndex(index);
-        setLocalNotebooks(updated);
-    };
-
-    const handleDragEnd = () => {
-        setDraggedItemIndex(null);
-        // এখানে চাইলে পজিশন আপডেট ব্যাকএন্ডে পাঠানোর জন্য API কল যুক্ত করতে পারো পরবর্তীতে
-    };
 
     // ১. নতুন নোটবুক খোলার মোডাল বা রিসেট
     const handleOpenCreateModal = () => {
@@ -112,7 +89,6 @@ export default function NotebooksPage() {
     // ৪. ডিলিট কনফার্মেশন হ্যান্ডলার
     const confirmDeleteNotebook = async () => {
         if (!notebookToDelete) return;
-
         try {
             setDeleting(true);
             await softDeleteNotebook(notebookToDelete);
@@ -142,12 +118,11 @@ export default function NotebooksPage() {
             </div>
 
             {/* লোডিং অথবা এম্প্টি স্টেট */}
-            {/* লোডিং অথবা এম্প্টি স্টেট */}
             {loading ? (
                 <div className="flex justify-center items-center py-20">
                     <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
                 </div>
-            ) : displayNotebooks.length === 0 ? (
+            ) : notebooks.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 text-zinc-400 dark:text-zinc-500 space-y-3 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl">
                     <BookOpen className="w-12 h-12 stroke-[1.5]" />
                     <p className="text-base font-medium">No notebooks found</p>
@@ -156,14 +131,14 @@ export default function NotebooksPage() {
             ) : (
                 /* নোটবুক গ্রিড লেআউট (ড্র্যাগ এন্ড ড্রপ এনাবল্ড) */
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                    {displayNotebooks.map((notebook, index) => (
+                    {notebooks.map((notebook, index) => (
                         <div
                             key={notebook.id}
                             draggable
-                            onDragStart={() => handleDragStart(index)}
-                            onDragOver={(e) => handleDragOver(e, index)}
-                            onDragEnd={handleDragEnd}
-                            className={`group relative bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between  ${draggedItemIndex === index ? 'opacity-40 border-dashed border-blue-500' : ''
+                            onDragStart={() => handleNotebookDragStart(index)}
+                            onDragOver={(e) => handleNotebookDragOver(e, index)}
+                            onDragEnd={handleNotebookDragEnd}
+                            className={`group relative bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between  ${draggedNotebookIndex === index ? 'opacity-40 border-dashed border-blue-500' : ''
                                 }`}
                         >
                             <div className="space-y-3">

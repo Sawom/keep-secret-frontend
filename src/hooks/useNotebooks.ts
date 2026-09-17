@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { notebookService, Notebook, CreateNotebookDto, UpdateNotebookDto } from '@/services/notebook.service';
 
 export function useNotebooks() {
@@ -6,6 +6,12 @@ export function useNotebooks() {
     const [trashNotebooks, setTrashNotebooks] = useState<Notebook[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
+
+    // ড্র্যাগ এন্ড ড্রপের জন্য স্টেট
+    const [draggedNotebookIndex, setDraggedNotebookIndex] = useState<number | null>(null);
+    const draggedNotebookIndexRef = useRef<number | null>(null);
+    const notebooksRef = useRef<Notebook[]>([]);
+    const originalNotebooksRef = useRef<Notebook[]>([]);
 
     // ১. সব সক্রিয় নোটবুক ফেচ করা
     const fetchNotebooks = useCallback(async () => {
@@ -110,7 +116,88 @@ export function useNotebooks() {
         }
     };
 
+    //  drag and drop functions
+    const handleNotebookDragStart = (index: number) => {
+        originalNotebooksRef.current = [...notebooks];
+
+        notebooksRef.current = [...notebooks];
+
+        draggedNotebookIndexRef.current = index;
+
+        setDraggedNotebookIndex(index);
+    };
+
+    const handleNotebookDragOver = (
+        e: React.DragEvent,
+        index: number,
+    ) => {
+        e.preventDefault();
+
+        const currentIndex = draggedNotebookIndexRef.current;
+
+        if (currentIndex === null || currentIndex === index) {
+            return;
+        }
+
+        const updatedNotebooks = [...notebooksRef.current];
+
+        const draggedNotebook = updatedNotebooks[currentIndex];
+
+        if (!draggedNotebook) {
+            return;
+        }
+
+        // Old position থেকে remove
+        updatedNotebooks.splice(currentIndex, 1);
+
+        // New position-এ insert
+        updatedNotebooks.splice(index, 0, draggedNotebook);
+
+        // Immediately ref update
+        notebooksRef.current = updatedNotebooks;
+
+        // Immediately UI update
+        setNotebooks(updatedNotebooks);
+
+        // New dragged index remember
+        draggedNotebookIndexRef.current = index;
+        setDraggedNotebookIndex(index);
+    };
+
+    const handleNotebookDragEnd = async () => {
+        if (draggedNotebookIndexRef.current === null) {
+            return;
+        }
+
+        draggedNotebookIndexRef.current = null;
+        setDraggedNotebookIndex(null);
+
+        const currentNotebooks = notebooksRef.current;
+
+        try {
+            const reorderItems = currentNotebooks.map((notebook, index) => ({
+                id: notebook.id,
+                position: index,
+            }));
+
+            await notebookService.reorderNotebooks(reorderItems);
+        } catch (error) {
+            console.error('Failed to save notebook order:', error);
+
+            // Backend save fail করলে আগের order restore
+            const originalNotebooks = originalNotebooksRef.current;
+
+            notebooksRef.current = originalNotebooks;
+            setNotebooks(originalNotebooks);
+        }
+    };
+
+
     return {
+        draggedNotebookIndex,
+        handleNotebookDragStart,
+        handleNotebookDragOver,
+        handleNotebookDragEnd,
         notebooks,
         trashNotebooks,
         loading,

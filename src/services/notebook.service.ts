@@ -68,6 +68,18 @@ export const notebookService = {
     // নির্দিষ্ট নোটবুক স্থায়ীভাবে ডিলিট করা (Hard Delete)
     async permanentDeleteNotebook(id: string): Promise<{ message: string }> {
         return await api.delete(`/notebooks/${id}`);
+    },
+
+    // ড্র্যাগ এন্ড ড্রপের পর notebook পজিশন আপডেট করা
+    async reorderNotebooks(
+        items: {
+            id: string;
+            position: number;
+        }[],
+    ) {
+        return await api.patch('/notebooks/reorder', {
+            items,
+        });
     }
 
 };
