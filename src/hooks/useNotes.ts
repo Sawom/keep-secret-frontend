@@ -41,18 +41,14 @@ export function useNotes() {
 
     // সেভ এবং ক্লোজ করার ফাংশন
     const handleSaveEdit = async () => {
-        // if (!editingNoteId) return;
-        if (!editingNoteId || isUpdatingRef.current) return;
-        isUpdatingRef.current = true;
-
+        if (!editingNoteId) return;
         try {
             setIsUpdating(true);
             await noteService.updateNote(editingNoteId, {
                 title: editTitle,
                 content: editBody,
             });
-
-            // লোকাল স্টেট আপডেট করা যাতে UI সাথে সাথে রিফ্লেক্ট করে
+            // লোকাল স্টেট আপডেট করা যাতে UI ও ডেট সাথে সাথে রিফ্লেক্ট করে
             setNotes((prevNotes) =>
                 prevNotes.map((note) =>
                     note.id === editingNoteId
@@ -93,11 +89,8 @@ export function useNotes() {
             autoSaveTimerRef.current = null;
         }
 
-        // যদি অলরেডি সেভিং না চলতে থাকে, তবেই ফাইনাল সেভ কল হবে
-        if (!isUpdatingRef.current) {
-            await handleSaveEdit();
-        }
-
+        // মোডাল বন্ধ করার সময় ফাইনাল সেভ কল করা হবে
+        await handleSaveEdit();
         setEditingNoteId(null);
     };
 
