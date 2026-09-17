@@ -8,6 +8,7 @@ interface Note {
     content: string;
     color?: string;
     isPinned: boolean;
+    position: number;
     createdAt: string;
     updatedAt: string;
 }
@@ -110,11 +111,14 @@ export function useNotes() {
 
             // পিন করা নোটগুলো সবসময় ওপরে এবং রিসেন্ট নোটগুলো সাজিয়ে রাখা
             const sortedNotes = notesData.sort((a: Note, b: Note) => {
-                if (a.isPinned === b.isPinned) {
-                    return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+                if (a.isPinned !== b.isPinned) {
+                    return a.isPinned ? -1 : 1;
                 }
-                return a.isPinned ? -1 : 1;
+
+                return a.position - b.position;
             });
+
+            notesRef.current = sortedNotes;
             setNotes(sortedNotes);
         } catch (error) {
             console.error('Failed to fetch notes:', error);

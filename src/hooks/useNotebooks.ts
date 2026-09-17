@@ -13,13 +13,16 @@ export function useNotebooks() {
     const notebooksRef = useRef<Notebook[]>([]);
     const originalNotebooksRef = useRef<Notebook[]>([]);
 
-   // ১. সব সক্রিয় নোটবুক ফেচ করা (route change ba re-mount er shomoy data vanish hobar problem fix korar jonno)
+    // ১. সব সক্রিয় নোটবুক ফেচ করা (route change ba re-mount er shomoy data vanish hobar problem fix korar jonno)
     const fetchNotebooks = useCallback(async (isInitial = false) => {
         try {
-            if (isInitial || notebooks.length === 0) {
+            if (isInitial) {
                 setLoading(true);
             }
+
             const data = await notebookService.getNotebooks();
+
+            notebooksRef.current = data;
             setNotebooks(data);
             setError(null);
         } catch (err: any) {
@@ -27,7 +30,7 @@ export function useNotebooks() {
         } finally {
             setLoading(false);
         }
-    }, [notebooks.length]);
+    }, []);
 
     useEffect(() => {
         // 1st time mount
