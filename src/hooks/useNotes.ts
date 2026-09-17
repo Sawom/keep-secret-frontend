@@ -27,6 +27,9 @@ export function useNotes() {
     const [editTitle, setEditTitle] = useState('');
     const [editBody, setEditBody] = useState('');
     const [isUpdating, setIsUpdating] = useState(false);
+
+    // ডাবল রিকোয়েস্ট রোধ করার জন্য useRef ব্যবহার করা হলো
+    const isUpdatingRef = useRef(false);
     const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
     // কার্ডে ক্লিক করলে এডিট মোড ও মডাল ওপেন হবে
@@ -38,13 +41,17 @@ export function useNotes() {
 
     // সেভ এবং ক্লোজ করার ফাংশন
     const handleSaveEdit = async () => {
-        if (!editingNoteId) return;
+        // if (!editingNoteId) return;
+        if (!editingNoteId || isUpdatingRef.current) return;
+        isUpdatingRef.current = true;
+
         try {
             setIsUpdating(true);
             await noteService.updateNote(editingNoteId, {
                 title: editTitle,
                 content: editBody,
             });
+
             // লোকাল স্টেট আপডেট করা যাতে UI সাথে সাথে রিফ্লেক্ট করে
             setNotes((prevNotes) =>
                 prevNotes.map((note) =>
@@ -83,8 +90,14 @@ export function useNotes() {
     const handleCloseModal = async () => {
         if (autoSaveTimerRef.current) {
             clearTimeout(autoSaveTimerRef.current);
+            autoSaveTimerRef.current = null;
         }
-        await handleSaveEdit();
+
+        // যদি অলরেডি সেভিং না চলতে থাকে, তবেই ফাইনাল সেভ কল হবে
+        if (!isUpdatingRef.current) {
+            await handleSaveEdit();
+        }
+
         setEditingNoteId(null);
     };
 

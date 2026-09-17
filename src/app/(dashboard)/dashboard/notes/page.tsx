@@ -204,12 +204,26 @@ function NotesContent() {
 
                             <div className="flex items-center justify-between pt-3 border-t border-zinc-100 dark:border-zinc-800">
                                 <div className="flex items-center gap-1.5 text-zinc-500 dark:text-zinc-400">
-                                    <button type="button" className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full" title="Remind me"><Bell className="w-4 h-4" /></button>
+                                    {/* create update message */}
+                                    {(() => {
+                                        const created = new Date(activeNote.createdAt).getTime();
+                                        const updated = new Date(activeNote.updatedAt).getTime();
+                                        // যদি আপডেট টাইম এবং ক্রিয়েট টাইমের পার্থক্য ২ সেকেন্ডের বেশি হয়, তবে ধরে নেব এটা এডিট করা হয়েছে
+                                        const isUpdated = Math.abs(updated - created) > 2000;
+
+                                        return (
+                                            <span className="text-[11px] text-zinc-400">
+                                                {isUpdated ? 'Edited: ' : 'Created: '}
+                                                {formatLocalDate(activeNote.updatedAt || activeNote.createdAt)}
+                                            </span>
+                                        );
+                                    })()}
+                                    {/* <button type="button" className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full" title="Remind me"><Bell className="w-4 h-4" /></button>
                                     <button type="button" className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full" title="Collaborator"><UserPlus className="w-4 h-4" /></button>
                                     <button type="button" className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full" title="Change Color"><Palette className="w-4 h-4" /></button>
                                     <button type="button" className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full" title="Add Image"><ImageIcon className="w-4 h-4" /></button>
                                     <button type="button" className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full" title="Archive"><Archive className="w-4 h-4" /></button>
-                                    <button type="button" className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full" title="More"><MoreVertical className="w-4 h-4" /></button>
+                                    <button type="button" className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full" title="More"><MoreVertical className="w-4 h-4" /></button> */}
                                 </div>
 
                                 <div className="flex items-center gap-2">
