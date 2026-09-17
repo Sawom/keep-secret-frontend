@@ -1,53 +1,93 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useNotebooks } from '@/hooks/useNotebooks'; // কাস্টম হুক ইম্পোর্ট
-import { Folder, Plus, Trash2, BookOpen, Loader2 } from 'lucide-react';
+import { useNotebooks } from '@/hooks/useNotebooks';
+import { Notebook } from '@/services/notebook.service';
+import { Folder, Plus, Trash2, Edit3, BookOpen, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function NotebooksPage() {
-    const { notebooks, loading, createNotebook, softDeleteNotebook } = useNotebooks();
-    const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
+    const { notebooks, loading, createNotebook, updateNotebook, softDeleteNotebook } = useNotebooks();
 
-    // ফর্ম ইনপুট স্টেট
+    // মোডাল স্টেট
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
+    const [editingNotebook, setEditingNotebook] = useState<Notebook | null>(null);
+    const [notebookToDelete, setNotebookToDelete] = useState<string | null>(null);
+    const [deleting, setDeleting] = useState<boolean>(false);
+
+    // ফর্ম ইনপুট স্টেট (Create & Edit উভয়ের জন্য)
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [color, setColor] = useState('#3B82F6');
     const [submitting, setSubmitting] = useState(false);
 
-    // নতুন নোটবুক ক্রিয়েট সাবমিট হ্যান্ডলার (হুক থেকে)
-    const handleCreateNotebook = async (e: React.FormEvent) => {
+    // ১. নতুন নোটবুক খোলার মোডাল বা রিসেট
+    const handleOpenCreateModal = () => {
+        setEditingNotebook(null);
+        setTitle('');
+        setDescription('');
+        setColor('#3B82F6');
+        setIsCreateModalOpen(true);
+    };
+
+    // ২. নোটবুক এডিট মোডাল ওপেন করার ফাংশন
+    const handleOpenEditModal = (notebook: Notebook) => {
+        setEditingNotebook(notebook);
+        setTitle(notebook.title);
+        setDescription(notebook.description || '');
+        setColor(notebook.color || '#3B82F6');
+        setIsCreateModalOpen(true);
+    };
+
+    // ৩. ফর্ম সাবমিট হ্যান্ডলার (ক্রিয়েট অথবা আপডেট একসাথেই হ্যান্ডেল করবে)
+    const handleSubmitNotebook = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!title.trim()) return;
 
         try {
             setSubmitting(true);
-            await createNotebook({
-                title,
-                description,
-                color,
-                icon: 'book',
-            });
-            // ইনপুট রিসেট এবং মোডাল বন্ধ করা
+            if (editingNotebook) {
+                // আপডেট কল
+                await updateNotebook(editingNotebook.id, {
+                    title,
+                    description,
+                    color,
+                });
+            } else {
+                // ক্রিয়েট কল
+                await createNotebook({
+                    title,
+                    description,
+                    color,
+                    icon: 'book',
+                });
+            }
+
+            // রিসেট এবং মোডাল বন্ধ করা
             setTitle('');
             setDescription('');
             setColor('#3B82F6');
+            setEditingNotebook(null);
             setIsCreateModalOpen(false);
         } catch (error) {
-            console.error('Failed to create notebook:', error);
+            console.error('Failed to save notebook:', error);
         } finally {
             setSubmitting(false);
         }
     };
 
-    // নোটবুক ডিলিট হ্যান্ডলার (সফট ডিলিট / ট্র্যাশে পাঠানো)
-    const handleDeleteNotebook = async (id: string) => {
-        if (!confirm('Are you sure you want to move this notebook to trash? Notes inside will not be deleted.')) return;
+    // ৪. ডিলিট কনফার্মেশন হ্যান্ডলার
+    const confirmDeleteNotebook = async () => {
+        if (!notebookToDelete) return;
 
         try {
-            await softDeleteNotebook(id);
+            setDeleting(true);
+            await softDeleteNotebook(notebookToDelete);
+            setNotebookToDelete(null);
         } catch (error) {
             console.error('Failed to delete notebook:', error);
+        } finally {
+            setDeleting(false);
         }
     };
 
@@ -60,7 +100,7 @@ export default function NotebooksPage() {
                     <p className="text-sm text-zinc-500 dark:text-zinc-400">Organize your encrypted notes into chapters and projects.</p>
                 </div>
                 <button
-                    onClick={() => setIsCreateModalOpen(true)}
+                    onClick={handleOpenCreateModal}
                     className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors shadow-sm cursor-pointer"
                 >
                     <Plus className="w-4 h-4" />
@@ -95,13 +135,24 @@ export default function NotebooksPage() {
                                     >
                                         <Folder className="w-5 h-5" />
                                     </div>
-                                    <button
-                                        onClick={() => handleDeleteNotebook(notebook.id)}
-                                        className="text-zinc-400 hover:text-red-600 dark:hover:text-red-400 p-1.5 rounded-lg transition-colors opacity-0 group-hover:opacity-100 cursor-pointer"
-                                        title="Delete Notebook"
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
+
+                                    {/* এডিট এবং ডিলিট আইকন বাটন */}
+                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button
+                                            onClick={() => handleOpenEditModal(notebook)}
+                                            className="text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400 p-1.5 rounded-lg transition-colors cursor-pointer"
+                                            title="Edit Notebook"
+                                        >
+                                            <Edit3 className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            onClick={() => setNotebookToDelete(notebook.id)}
+                                            className="text-zinc-400 hover:text-red-600 dark:hover:text-red-400 p-1.5 rounded-lg transition-colors cursor-pointer"
+                                            title="Delete Notebook"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <div>
@@ -128,13 +179,15 @@ export default function NotebooksPage() {
                 </div>
             )}
 
-            {/* নতুন নোটবুক তৈরির পপআপ মোডাল (Modal) */}
+            {/* নোটবুক তৈরি বা এডিট করার পপআপ মোডাল (Modal) */}
             {isCreateModalOpen && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                     <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4">
-                        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Create New Notebook</h2>
+                        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+                            {editingNotebook ? 'Edit Notebook' : 'Create New Notebook'}
+                        </h2>
 
-                        <form onSubmit={handleCreateNotebook} className="space-y-4">
+                        <form onSubmit={handleSubmitNotebook} className="space-y-4">
                             <div>
                                 <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">Title</label>
                                 <input
@@ -181,10 +234,43 @@ export default function NotebooksPage() {
                                     className="px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50"
                                 >
                                     {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
-                                    Create
+                                    {editingNotebook ? 'Save Changes' : 'Create'}
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* ডিলিট কনফার্মেশন কাস্টম মোডাল */}
+            {notebookToDelete && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+                    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 w-80 shadow-xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
+                        <h3 className="text-base font-semibold text-zinc-800 dark:text-zinc-100">
+                            Move to trash?
+                        </h3>
+                        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                            Are you sure you want to move this notebook to the trash? Notes inside will not be deleted.
+                        </p>
+                        <div className="flex justify-end gap-2 pt-2">
+                            <button
+                                type="button"
+                                onClick={() => setNotebookToDelete(null)}
+                                disabled={deleting}
+                                className="px-4 py-2 text-sm font-medium text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors cursor-pointer"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                onClick={confirmDeleteNotebook}
+                                disabled={deleting}
+                                className="px-4 py-2 text-sm font-medium bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors shadow-sm cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                            >
+                                {deleting && <Loader2 className="w-4 h-4 animate-spin" />}
+                                OK
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
