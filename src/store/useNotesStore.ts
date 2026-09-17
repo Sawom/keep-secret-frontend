@@ -13,10 +13,19 @@ export interface Note {
 
 interface NotesStore {
     notes: Note[];
+    trashNotes: Note[];
+
     hasLoaded: boolean;
+    hasTrashLoaded: boolean;
 
     setNotes: (
         notes: Note[] | ((previousNotes: Note[]) => Note[])
+    ) => void;
+
+    setTrashNotes: (
+        notes:
+            | Note[]
+            | ((previousNotes: Note[]) => Note[])
     ) => void;
 
     clearNotes: () => void;
@@ -24,7 +33,10 @@ interface NotesStore {
 
 export const useNotesStore = create<NotesStore>((set) => ({
     notes: [],
+    trashNotes: [],
+
     hasLoaded: false,
+    hasTrashLoaded: false,
 
     setNotes: (notes) =>
         set((state) => ({
@@ -32,12 +44,26 @@ export const useNotesStore = create<NotesStore>((set) => ({
                 typeof notes === 'function'
                     ? notes(state.notes)
                     : notes,
+
             hasLoaded: true,
+        })),
+
+    setTrashNotes: (notes) =>
+        set((state) => ({
+            trashNotes:
+                typeof notes === 'function'
+                    ? notes(state.trashNotes)
+                    : notes,
+
+            hasTrashLoaded: true,
         })),
 
     clearNotes: () =>
         set({
             notes: [],
+            trashNotes: [],
+
             hasLoaded: false,
+            hasTrashLoaded: false,
         }),
 }));

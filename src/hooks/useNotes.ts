@@ -1,23 +1,60 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { noteService } from '@/services/note.service';
 import { useAuthStore } from '@/store/useAuthStore';
-import { Note, useNotesStore } from '@/store/useNotesStore';
+import { useNotesStore, Note } from '@/store/useNotesStore';
 
 export function useNotes() {
-    // 🔧 CHANGED: Notes এখন local useState-এ নয়, Zustand store-এ থাকবে।
-    // Route change হলেও এই data memory-তে থাকবে।
+    /*
+     * 🔧 CHANGED:
+     *
+     * Notes আর শুধু hook-এর local state-এ থাকবে না।
+     * Zustand store থেকে নেওয়া হবে যাতে route change হলেও
+     * আগের fetched data memory-তে থাকে।
+     */
     const notes = useNotesStore((state) => state.notes);
-    const setNotes = useNotesStore((state) => state.setNotes);
-    const hasLoaded = useNotesStore((state) => state.hasLoaded);
+    const trashNotes = useNotesStore(
+        (state) => state.trashNotes
+    );
 
-    // 🔧 CHANGED: Cache আগে থেকেই থাকলে প্রথম render থেকেই loading false থাকবে।
-    const [loading, setLoading] = useState(!hasLoaded);
+    const hasLoaded = useNotesStore(
+        (state) => state.hasLoaded
+    );
 
-    const accessToken = useAuthStore((state) => state.accessToken);
+    const hasTrashLoaded = useNotesStore(
+        (state) => state.hasTrashLoaded
+    );
+
+    const setNotes = useNotesStore(
+        (state) => state.setNotes
+    );
+
+    const setTrashNotes = useNotesStore(
+        (state) => state.setTrashNotes
+    );
+
+    const accessToken = useAuthStore(
+        (state) => state.accessToken
+    );
+
+    /*
+     * 🔧 CHANGED:
+     *
+     * Cached data থাকলে প্রথম render থেকেই data দেখানো হবে।
+     * তাই route change-এর সময় আবার full-page loading spinner
+     * দেখানো হবে না।
+     */
+    const [loading, setLoading] = useState(
+        !hasLoaded && !!accessToken
+    );
+
+    const [trashLoading, setTrashLoading] = useState(
+        !hasTrashLoaded && !!accessToken
+    );
 
     // ড্র্যাগ এন্ড ড্রপের জন্য স্টেট
     const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
-    const notesRef = useRef<Note[]>([]);
+
+    const notesRef = useRef<Note[]>(notes);
     const draggedItemIndexRef = useRef<number | null>(null);
     const originalNotesRef = useRef<Note[]>([]);
     const isReorderingRef = useRef(false);
@@ -35,7 +72,15 @@ export function useNotes() {
     const isUpdatingRef = useRef(false);
     const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-    // 🔧 CHANGED: Zustand থেকে notes পরিবর্তন হলে drag/drop-এর ref-ও sync থাকবে।
+    /*
+     * 🔧 CHANGED:
+     *
+     * Zustand store থেকে notes পরিবর্তন হলে local ref-টাও
+     * sync করে রাখা হচ্ছে।
+     *
+     * Drag & Drop-এর সময় ref ব্যবহার করা হয়, তাই ref যেন
+     * সর্বশেষ Zustand data ধরে রাখে সেটা নিশ্চিত করা হচ্ছে।
+     */
     useEffect(() => {
         notesRef.current = notes;
     }, [notes]);
@@ -47,8 +92,7 @@ export function useNotes() {
         setEditBody(note.content || '');
     };
 
-    // 🔧 CHANGED: Note update এখন Zustand cache-ও সাথে সাথে update করবে।
-    // Backend save হওয়ার পর UI instantly update হবে এবং route change হলেও data থাকবে।
+    // সেভ এবং ক্লোজ করার ফাংশন
     const handleSaveEdit = async () => {
         if (!editingNoteId) return;
 
@@ -65,6 +109,7 @@ export function useNotes() {
                 content: editBody,
             });
 
+            // লোকাল স্টেট আপডেট করা যাতে UI ও ডেট সাথে সাথে রিফ্লেক্ট করে
             setNotes((prevNotes) =>
                 prevNotes.map((note) =>
                     note.id === editingNoteId
@@ -113,80 +158,161 @@ export function useNotes() {
 
         // মোডাল বন্ধ করার সময় ফাইনাল সেভ কল করা হবে
         await handleSaveEdit();
+
         setEditingNoteId(null);
     };
 
-    // 🔧 CHANGED: Notes fetch এখন cache-aware।
-    // Cache থাকলে loading spinner দেখাবে না।
-    // API background-এ refresh হবে এবং fresh data Zustand-এ update হবে।
-    const fetchNotes = async (isInitial = false) => {
-        try {
-            const currentHasLoaded =
-                useNotesStore.getState().hasLoaded;
-
-            /*
-             * প্রথমবার কোনো data না থাকলে শুধু তখনই blocking
-             * loading spinner দেখানো হবে।
-             *
-             * Route change করে ফিরে এলে cache থাকলে
-             * existing data immediately দেখানো হবে।
-             */
-            if (!currentHasLoaded) {
-                setLoading(true);
+    // ১. নোট ফেচ করা
+    const fetchNotes = useCallback(
+        async (isInitial = false) => {
+            if (!accessToken) {
+                setLoading(false);
+                return;
             }
 
-            const response: any = await noteService.getNotes();
-
-            const notesData = Array.isArray(response)
-                ? response
-                : response?.data ||
-                response?.notes ||
-                [];
-
-            // পিন করা নোটগুলো সবসময় ওপরে এবং রিসেন্ট নোটগুলো সাজিয়ে রাখা
-            // 🔧 CHANGED: spread ব্যবহার করা হয়েছে যাতে API response array mutate না হয়।
-            const sortedNotes = [...notesData].sort(
-                (a: Note, b: Note) => {
-                    if (a.isPinned !== b.isPinned) {
-                        return a.isPinned ? -1 : 1;
-                    }
-
-                    return a.position - b.position;
+            try {
+                /*
+                 * 🔧 CHANGED:
+                 *
+                 * প্রথমবার কোনো cached data না থাকলে spinner দেখানো হবে।
+                 *
+                 * কিন্তু Zustand-এ আগের data থাকলে loading=true করা হবে না।
+                 * ফলে route change-এর সময় আগের data screen-এ থাকবে।
+                 */
+                if (isInitial && !hasLoaded) {
+                    setLoading(true);
                 }
-            );
 
-            notesRef.current = sortedNotes;
+                const response: any =
+                    await noteService.getNotes();
 
-            // 🔧 CHANGED: Local state-এর পরিবর্তে Zustand cache update।
-            setNotes(sortedNotes);
-        } catch (error) {
-            console.error('Failed to fetch notes:', error);
+                const notesData = Array.isArray(response)
+                    ? response
+                    : response?.data ||
+                    response?.notes ||
+                    [];
 
-            /*
-             * Background refresh fail করলেও existing cached
-             * notes clear করা হবে না।
-             */
-        } finally {
-            setLoading(false);
-        }
-    };
+                // পিন করা নোটগুলো সবসময় ওপরে এবং রিসেন্ট নোটগুলো সাজিয়ে রাখা
+                const sortedNotes = [...notesData].sort(
+                    (a: Note, b: Note) => {
+                        if (a.isPinned !== b.isPinned) {
+                            return a.isPinned ? -1 : 1;
+                        }
 
-    // 🔧 CHANGED: Route remount হলেও cache থাকলে আর blocking loading হবে না।
-    // Layout থেকে note-saved event এলে silent background refresh হবে।
+                        return a.position - b.position;
+                    }
+                );
+
+                notesRef.current = sortedNotes;
+
+                /*
+                 * 🔧 CHANGED:
+                 *
+                 * Local setNotes-এর পরিবর্তে Zustand store update করা হচ্ছে।
+                 * এতে route change হলেও data memory-তে থাকবে।
+                 */
+                setNotes(sortedNotes);
+            } catch (error) {
+                console.error(
+                    'Failed to fetch notes:',
+                    error
+                );
+
+                /*
+                 * 🔧 CHANGED:
+                 *
+                 * Backend request fail করলেও cached data থাকলে
+                 * সেটা screen থেকে remove করা হবে না।
+                 */
+            } finally {
+                setLoading(false);
+            }
+        },
+        [
+            accessToken,
+            hasLoaded,
+            setNotes,
+        ]
+    );
+
+    // ২. ট্র্যাশের নোটগুলো ফেচ করা
+    const fetchTrashNotes = useCallback(
+        async (isInitial = false) => {
+            if (!accessToken) {
+                setTrashLoading(false);
+                return;
+            }
+
+            try {
+                /*
+                 * 🔧 CHANGED:
+                 *
+                 * Trash cache আগে থেকেই থাকলে route change-এর সময়
+                 * নতুন spinner দেখানো হবে না।
+                 */
+                if (isInitial && !hasTrashLoaded) {
+                    setTrashLoading(true);
+                }
+
+                const response: any =
+                    await noteService.getTrashNotes();
+
+                const trashData = Array.isArray(response)
+                    ? response
+                    : response?.data ||
+                    response?.notes ||
+                    [];
+
+                /*
+                 * 🔧 CHANGED:
+                 *
+                 * Trash data Zustand store-এ রাখা হচ্ছে।
+                 */
+                setTrashNotes(trashData);
+            } catch (error) {
+                console.error(
+                    'Failed to fetch trash notes:',
+                    error
+                );
+            } finally {
+                setTrashLoading(false);
+            }
+        },
+        [
+            accessToken,
+            hasTrashLoaded,
+            setTrashNotes,
+        ]
+    );
+
+    // পেজ লোড ও ইভেন্ট শোনার জন্য useEffect
     useEffect(() => {
+        // টোকেন না থাকলে লোডিং ফলস করে দেব যাতে সারাক্ষণ লোডিং হয়ে না থাকে
         if (!accessToken) {
             setLoading(false);
+            setTrashLoading(false);
             return;
         }
 
-        fetchNotes();
+        /*
+         * 🔧 CHANGED:
+         *
+         * Zustand cache থাকলে cached data already UI-তে থাকবে।
+         * এরপর backend থেকে background refresh হবে।
+         *
+         * প্রথমবার data না থাকলে শুধু spinner দেখাবে।
+         */
+        fetchNotes(!hasLoaded);
 
         // লেআউটে নতুন নোট সেভ হলে এই লিসেনার অটোমেটিক ফেচ করবে
         const handleNoteSaved = () => {
-            fetchNotes();
+            fetchNotes(false);
         };
 
-        window.addEventListener('note-saved', handleNoteSaved);
+        window.addEventListener(
+            'note-saved',
+            handleNoteSaved
+        );
 
         return () => {
             window.removeEventListener(
@@ -194,21 +320,81 @@ export function useNotes() {
                 handleNoteSaved
             );
         };
-    }, [accessToken]);
+    }, [
+        accessToken,
+        hasLoaded,
+        fetchNotes,
+    ]);
 
-    // 🔧 CHANGED: Delete-এর পর Zustand cache থেকে note remove হবে।
-    // Functional updater ব্যবহার করায় stale state-এর problem হবে না।
+    /*
+     * 🔧 CHANGED:
+     *
+     * Trash page-এ গেলে trash data fetch হবে।
+     *
+     * যদি cache থাকে তাহলে প্রথমে cached data দেখাবে এবং
+     * background-এ backend থেকে fresh data আনবে।
+     */
+    useEffect(() => {
+        if (!accessToken) {
+            setTrashLoading(false);
+            return;
+        }
+
+        fetchTrashNotes(!hasTrashLoaded);
+    }, [
+        accessToken,
+        hasTrashLoaded,
+        fetchTrashNotes,
+    ]);
+
+    // কনফার্মেশনের পর সফট ডিলিট হ্যান্ডলার
     const confirmDelete = async () => {
         if (!noteToDelete) return;
 
         try {
-            await noteService.softDeleteNote(noteToDelete);
+            /*
+             * 🔧 CHANGED:
+             *
+             * Delete করার আগে note object বের করে রাখছি,
+             * যাতে backend success হওয়ার পরে সেটাকে Trash cache-এ
+             * instantly যোগ করা যায়।
+             */
+            const deletedNote = notes.find(
+                (note) => note.id === noteToDelete
+            );
 
+            await noteService.softDeleteNote(
+                noteToDelete
+            );
+
+            /*
+             * 🔧 CHANGED:
+             *
+             * Active notes cache থেকে note remove করা হচ্ছে।
+             */
             setNotes((prevNotes) =>
                 prevNotes.filter(
                     (note) => note.id !== noteToDelete
                 )
             );
+
+            /*
+             * 🔧 CHANGED:
+             *
+             * Backend delete successful হওয়ার পর একই note
+             * Trash cache-এ instantly যোগ করা হচ্ছে।
+             *
+             * Backend পরে fresh data দিলে সেটাও replace হবে।
+             */
+            if (deletedNote) {
+                setTrashNotes((prevTrashNotes) => [
+                    deletedNote,
+                    ...prevTrashNotes.filter(
+                        (note) =>
+                            note.id !== noteToDelete
+                    ),
+                ]);
+            }
 
             setNoteToDelete(null);
         } catch (error) {
@@ -219,7 +405,97 @@ export function useNotes() {
         }
     };
 
-    // 🔧 CHANGED: Pin update Zustand cache-এ করা হচ্ছে।
+    /*
+     * 🔧 CHANGED:
+     *
+     * Trash থেকে note restore করার function।
+     *
+     * Backend success হওয়ার পর Trash cache থেকে remove
+     * এবং Active notes cache-এ add করা হবে।
+     */
+    const restoreNote = async (id: string) => {
+        try {
+            const restoredNote =
+                trashNotes.find(
+                    (note) => note.id === id
+                );
+
+            await noteService.restoreNote(id);
+
+            setTrashNotes((prevTrashNotes) =>
+                prevTrashNotes.filter(
+                    (note) => note.id !== id
+                )
+            );
+
+            if (restoredNote) {
+                setNotes((prevNotes) => {
+                    const alreadyExists =
+                        prevNotes.some(
+                            (note) => note.id === id
+                        );
+
+                    if (alreadyExists) {
+                        return prevNotes;
+                    }
+
+                    return [
+                        ...prevNotes,
+                        restoredNote,
+                    ];
+                });
+            }
+        } catch (error) {
+            console.error(
+                'Failed to restore note:',
+                error
+            );
+        }
+    };
+
+    /*
+     * 🔧 CHANGED:
+     *
+     * Trash থেকে permanently delete করার function।
+     */
+    const permanentDeleteNote = async (
+        id: string
+    ) => {
+        try {
+            await noteService.permanentDeleteNote(id);
+
+            setTrashNotes((prevTrashNotes) =>
+                prevTrashNotes.filter(
+                    (note) => note.id !== id
+                )
+            );
+        } catch (error) {
+            console.error(
+                'Failed to permanently delete note:',
+                error
+            );
+        }
+    };
+
+    /*
+     * 🔧 CHANGED:
+     *
+     * Notes Trash সম্পূর্ণ empty করার function।
+     */
+    const emptyTrash = async () => {
+        try {
+            await noteService.emptyTrash();
+
+            setTrashNotes([]);
+        } catch (error) {
+            console.error(
+                'Failed to empty note trash:',
+                error
+            );
+        }
+    };
+
+    // পিন টগল হ্যান্ডলার
     const handleTogglePin = async (
         id: string,
         currentPinned: boolean
@@ -268,9 +544,8 @@ export function useNotes() {
     };
 
     // ড্র্যাগ করার সময় নোটগুলোর লোকাল স্টেট ইনস্ট্যান্ট রিঅর্ডার করা, এটাই মূল smooth reorder function।
-    // কেন setNotes() functional form? ব্যবহার করেছি যাতে rapid dragover event-এর সময় stale state-এর সমস্যা না হয়।
+    // কেন setNotes() functional form? ব্যবহার করেছি যাতে rapid dragover event-এর সময় stale state-এর সমস্যা না হয়। 
     // Drag & drop-এর সময় browser খুব দ্রুত অনেক dragover event fire করতে পারে।
-    // 🔧 CHANGED: setNotes এখন Zustand store update করবে।
     const handleDragOver = (
         e: React.DragEvent,
         index: number,
@@ -314,12 +589,10 @@ export function useNotes() {
         setNotes(updatedNotes);
 
         draggedItemIndexRef.current = index;
-
         setDraggedItemIndex(index);
     };
 
-    // 🔧 CHANGED: Reorder fail করলে Zustand cache-এ আগের order restore হবে।
-    // Backend save success হলে current Zustand state-ই থাকবে।
+    // ড্র্যাগ শেষ হলে নতুন পজিশন ব্যাকএন্ডে সেভ করা
     const handleDragEnd = async () => {
         if (
             draggedItemIndexRef.current === null
@@ -370,7 +643,11 @@ export function useNotes() {
 
     return {
         notes,
+        trashNotes,
         loading,
+        trashLoading,
+        hasLoaded,
+        hasTrashLoaded,
         draggedItemIndex,
         noteToDelete,
         setNoteToDelete,
@@ -384,9 +661,15 @@ export function useNotes() {
         handleSaveEdit,
         handleCloseModal,
         confirmDelete,
+        restoreNote,
+        permanentDeleteNote,
+        emptyTrash,
         handleTogglePin,
         handleDragStart,
         handleDragOver,
         handleDragEnd,
+        fetchNotes,
+        fetchTrashNotes,
     };
+    
 }
