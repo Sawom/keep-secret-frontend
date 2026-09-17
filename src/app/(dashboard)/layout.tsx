@@ -18,23 +18,20 @@ export default function DashboardGroupLayout({
 }) {
     const pathname = usePathname();
     const setAccessToken = useAuthStore((state) => state.setAccessToken);
-    // note saving
-    // const [isSaving, setIsSaving] = useState(false);
-    // const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+
     // auth checking
     const [isCheckingAuth, setIsCheckingAuth] = useState(true);
     // Google Keep States
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
+    
     // Take a note modal states
     const [isNoteExpanded, setIsNoteExpanded] = useState(false);
     const [noteTitle, setNoteTitle] = useState('');
     const [noteBody, setNoteBody] = useState('');
 
     // handle save
-    // const router = useRouter();
     const [isSaving, setIsSaving] = useState(false);
-    const isSavingRef = useRef(false); // ডাবল কল রোধ করার জন্য সিঙ্ক্রোনাস রেফারেন্স লক
+    const isSavingRef = useRef(false);
     const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
     // ড্যাশবোর্ড লেআউটে ঢোকার সাথেই সেশন ও রিফ্রেশ টোকেন চেক করা হচ্ছে
@@ -42,7 +39,6 @@ export default function DashboardGroupLayout({
         const verifySession = async () => {
             const currentToken = useAuthStore.getState().accessToken;
 
-            // যদি মেমোরিতে টোকেন না থাকে, তবে কুকি ব্যবহার করে ব্যাকএন্ড থেকে টোকেন রিকভার করার চেষ্টা করব
             if (!currentToken) {
                 try {
                     const res: any = await api.post('/auth/refresh', {});
@@ -50,7 +46,6 @@ export default function DashboardGroupLayout({
                         setAccessToken(res.accessToken);
                     }
                 } catch (err) {
-                    // রিফ্রেশ টোকেনও মেয়াদোত্তীর্ণ বা ইনভ্যালিড হলে তবেই লগইন পেজে পাঠাবে
                     window.location.replace('/login?callbackUrl=/dashboard');
                     return;
                 }
@@ -61,8 +56,7 @@ export default function DashboardGroupLayout({
         verifySession();
     }, [setAccessToken]);
 
-
-    // ১. মূল সেভ ফাংশন (আগে ডিফাইন করা হলো যাতে নিচে useEffect এ কল করলে কোনো এরর না দেয়)
+    // ১. মূল সেভ ফাংশন
     const handleSaveNote = async () => {
         if (!noteTitle.trim() && !noteBody.trim()) return;
         if (isSavingRef.current || isSaving) return;
@@ -82,14 +76,11 @@ export default function DashboardGroupLayout({
                 color: '#FFFFFF',
                 isPinned: false
             });
-
             setNoteTitle('');
             setNoteBody('');
             setIsNoteExpanded(false);
 
-            // কাস্টম ইভেন্টের মাধ্যমে নোটস পেজ ইনস্ট্যান্ট আপডেট হয়ে যাবে
             window.dispatchEvent(new CustomEvent('note-saved'));
-
         } catch (error) {
             console.error('Save failed:', error);
         } finally {
@@ -98,9 +89,8 @@ export default function DashboardGroupLayout({
         }
     };
 
-    // অটো-সেভ ডিবাউন্স ইফেক্ট (ইউজার টাইপ করা থামিয়ে ১০ সেকেন্ড অপেক্ষা করলেই সেভ হবে)
+    // অটো-সেভ ডিবাউন্স ইফেক্ট
     useEffect(() => {
-        // যদি অথ চেক চলতে থাকে অথবা বক্স খোলা না থাকলে রিটার্ন করবে
         if (isCheckingAuth || !isNoteExpanded || (!noteTitle.trim() && !noteBody.trim())) return;
 
         if (autoSaveTimerRef.current) {
@@ -118,7 +108,6 @@ export default function DashboardGroupLayout({
         };
     }, [noteTitle, noteBody, isNoteExpanded, isCheckingAuth]);
 
-
     if (isCheckingAuth) {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-white gap-3">
@@ -127,7 +116,6 @@ export default function DashboardGroupLayout({
             </div>
         );
     }
-
 
     const navItems = [
         { name: 'Notes', href: '/dashboard/notes', icon: Pin },
@@ -138,10 +126,9 @@ export default function DashboardGroupLayout({
 
     return (
         <div className="min-h-screen flex flex-col bg-zinc-50 dark:bg-zinc-950">
-            {/* Top Navigation Bar (Google Keep Style Header) */}
+            {/* Top Navigation Bar */}
             <header className="h-16 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex items-center justify-between px-4 sticky top-0 z-30">
                 <div className="flex items-center gap-4">
-                    {/* Sidebar Toggle Button */}
                     <button
                         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
                         className="p-2 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-600 dark:text-zinc-300 transition-colors"
@@ -159,11 +146,8 @@ export default function DashboardGroupLayout({
                     </Link>
                 </div>
 
-                {/* Center / Right: Search & Profile/Settings */}
                 <div className="flex items-center gap-2">
-                    {/* Search Icon & Expandable Input */}
                     <SearchBar />
-
                     <Link
                         href="/dashboard/profile"
                         className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-600 dark:text-zinc-300"
@@ -183,8 +167,6 @@ export default function DashboardGroupLayout({
 
             {/* Body Layout with Sidebar and Main Content */}
             <div className="flex flex-1 overflow-hidden relative">
-
-                {/* মোবাইল স্ক্রিনের জন্য ব্যাকগ্রাউন্ড ওভারলে */}
                 {isSidebarOpen && (
                     <div
                         onClick={() => setIsSidebarOpen(false)}
@@ -192,11 +174,8 @@ export default function DashboardGroupLayout({
                     />
                 )}
 
-                {/* Google Keep Style Sidebar */}
                 <aside
-                    className={`transition-all duration-300 border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex flex-col z-30 absolute inset-y-0 left-0 md:relative ${isSidebarOpen
-                        ? 'w-64 translate-x-0 shadow-2xl md:shadow-none'
-                        : '-translate-x-full md:translate-x-0 md:w-20'
+                    className={`transition-all duration-300 border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex flex-col z-30 absolute inset-y-0 left-0 md:relative ${isSidebarOpen ? 'w-64 translate-x-0 shadow-2xl md:shadow-none' : '-translate-x-full md:translate-x-0 md:w-20'
                         }`}
                 >
                     <nav className="flex-1 py-3 space-y-1">
@@ -231,13 +210,11 @@ export default function DashboardGroupLayout({
                     </div>
                 </aside>
 
-                {/* Main Content Area with Google Keep Take a note Modal */}
                 <main className="flex-1 overflow-y-auto p-4 md:p-8 w-full flex flex-col items-center">
-
-                    {/* Google Keep "Take a note..." Box (Layout Level - Always Visible across pages) */}
                     <div className="w-full max-w-2xl mb-8 z-10">
-                        <div className={`bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-xl shadow-md transition-all duration-200 ${isNoteExpanded ? 'p-4' : 'px-4 py-3 flex items-center justify-between cursor-pointer hover:shadow-lg'
-                            }`}
+                        <div
+                            className={`bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-xl shadow-md transition-all duration-200 ${isNoteExpanded ? 'p-4' : 'px-4 py-3 flex items-center justify-between cursor-pointer hover:shadow-lg'
+                                }`}
                             onClick={() => {
                                 if (!isNoteExpanded) setIsNoteExpanded(true);
                             }}
@@ -248,7 +225,6 @@ export default function DashboardGroupLayout({
                                 </div>
                             ) : (
                                 <div className="space-y-3">
-                                    {/* Note Title Input */}
                                     <input
                                         type="text"
                                         placeholder="Title"
@@ -259,7 +235,6 @@ export default function DashboardGroupLayout({
                                         required
                                     />
 
-                                    {/* Note Body Textarea with Max-Height and Scroll */}
                                     <textarea
                                         placeholder="Take a note..."
                                         value={noteBody}
@@ -269,7 +244,6 @@ export default function DashboardGroupLayout({
                                         required
                                     />
 
-                                    {/* Footer Actions inside Expanded Note */}
                                     <div className="flex items-center justify-between pt-2 border-t border-zinc-100 dark:border-zinc-800">
                                         <div className="flex items-center gap-1 text-zinc-500 dark:text-zinc-400">
                                             <button className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full" title="New List"><CheckSquare className="w-4 h-4" /></button>
@@ -278,11 +252,8 @@ export default function DashboardGroupLayout({
                                         </div>
 
                                         <div>
-                                            {/* save button */}
                                             <button
-                                                // onClick={handleSaveNote}
                                                 onClick={() => {
-                                                    // ম্যানুয়াল ক্লিক করলে অটো-সেভ টাইমার ক্লিয়ার করে দেব
                                                     if (autoSaveTimerRef.current) {
                                                         clearTimeout(autoSaveTimerRef.current);
                                                         autoSaveTimerRef.current = null;
@@ -292,7 +263,6 @@ export default function DashboardGroupLayout({
                                                 disabled={isSaving}
                                                 className="px-4 mx-4 py-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 text-sm font-medium rounded-lg transition-colors"
                                             >
-                                                {/* <CheckSquare className="w-4 h-4" /> */}
                                                 {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckSquare className="w-4 h-4" />}
                                             </button>
 
@@ -300,8 +270,8 @@ export default function DashboardGroupLayout({
                                                 type="button"
                                                 onClick={async (e) => {
                                                     e.stopPropagation();
-                                                    await handleSaveNote(); // আগে সেভ হবে
-                                                    setIsNoteExpanded(false); // তারপর বক্স বন্ধ হবে
+                                                    await handleSaveNote();
+                                                    setIsNoteExpanded(false);
                                                 }}
                                                 disabled={isSaving}
                                                 className="px-4 py-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 text-sm font-medium rounded-lg transition-colors cursor-pointer"
@@ -309,15 +279,12 @@ export default function DashboardGroupLayout({
                                                 Close
                                             </button>
                                         </div>
-
                                     </div>
                                 </div>
                             )}
-
                         </div>
                     </div>
 
-                    {/* Page Specific Children Content */}
                     <div className="w-full max-w-4xl">
                         {children}
                     </div>
@@ -325,5 +292,4 @@ export default function DashboardGroupLayout({
             </div>
         </div>
     );
-
 }

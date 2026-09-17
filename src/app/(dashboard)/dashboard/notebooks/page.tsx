@@ -163,7 +163,7 @@ export default function NotebooksPage() {
                             onDragStart={() => handleDragStart(index)}
                             onDragOver={(e) => handleDragOver(e, index)}
                             onDragEnd={handleDragEnd}
-                            className={`group relative bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between cursor-grab active:cursor-grabbing ${draggedItemIndex === index ? 'opacity-40 border-dashed border-blue-500' : ''
+                            className={`group relative bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between  ${draggedItemIndex === index ? 'opacity-40 border-dashed border-blue-500' : ''
                                 }`}
                         >
                             <div className="space-y-3">
@@ -175,7 +175,7 @@ export default function NotebooksPage() {
                                         >
                                             <Folder className="w-5 h-5" />
                                         </div>
-                                        <div className="text-zinc-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <div className="text-zinc-400 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing transition-opacity">
                                             <GripVertical className="w-4 h-4" />
                                         </div>
                                     </div>
