@@ -8,6 +8,7 @@ interface Note {
     content: string;
     color?: string;
     isPinned: boolean;
+    createdAt: string;
     updatedAt: string;
 }
 

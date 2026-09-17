@@ -45,6 +45,17 @@ function NotesContent() {
         );
     }
 
+
+    const formatLocalDate = (dateString?: string) => {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+        }) + ' at ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    };
+
     return (
         <div className="w-full space-y-6 relative">
             <div className="flex items-center justify-between px-2">
@@ -107,6 +118,22 @@ function NotesContent() {
                                 </div>
 
                                 <div className="flex items-center justify-between pt-4 mt-4 border-t border-zinc-100 dark:border-zinc-800/60 opacity-0 group-hover:opacity-100 transition-opacity">
+
+                                    {/* create update message */}
+                                    {(() => {
+                                        const created = new Date(note.createdAt).getTime();
+                                        const updated = new Date(note.updatedAt).getTime();
+                                        // যদি আপডেট টাইম এবং ক্রিয়েট টাইমের পার্থক্য ২ সেকেন্ডের বেশি হয়, তবে ধরে নেব এটা এডিট করা হয়েছে
+                                        const isUpdated = Math.abs(updated - created) > 2000;
+
+                                        return (
+                                            <span className="text-[11px] text-zinc-400">
+                                                {isUpdated ? 'Edited: ' : 'Created: '}
+                                                {formatLocalDate(note.updatedAt || note.createdAt)}
+                                            </span>
+                                        );
+                                    })()}
+
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation();
