@@ -99,11 +99,15 @@ export function useNotes() {
         setEditingNoteId(null);
     };
 
-    const fetchNotes = async () => {
+    // ১. নোট ফেচ করা
+    const fetchNotes = async (isInitial = false) => {
         try {
-            setLoading(true);
+            if (isInitial || notes.length === 0) {
+                setLoading(true);
+            }
             const response: any = await noteService.getNotes();
             const notesData = Array.isArray(response) ? response : response?.data || response?.notes || [];
+
             // পিন করা নোটগুলো সবসময় ওপরে এবং রিসেন্ট নোটগুলো সাজিয়ে রাখা
             const sortedNotes = notesData.sort((a: Note, b: Note) => {
                 if (a.isPinned === b.isPinned) {
@@ -121,12 +125,16 @@ export function useNotes() {
 
     // পেজ লোড ও ইভেন্ট শোনার জন্য useEffect
     useEffect(() => {
-        if (!accessToken) return;
+        // টোকেন না থাকলে লোডিং ফলস করে দেব যাতে সারাক্ষণ লোডিং হয়ে না থাকে
+        if (!accessToken) {
+            setLoading(false);
+            return;
+        }
 
-        // ১. প্রথমবার নোট ফেচ করা
-        fetchNotes();
+        // প্রথমবার নোট ফেচ করা
+        fetchNotes(true);
 
-        // ২. লেআউটে নতুন নোট সেভ হলে এই লিসেনার অটোমেটিক ফেচ করবে
+        // লেআউটে নতুন নোট সেভ হলে এই লিসেনার অটোমেটিক ফেচ করবে
         const handleNoteSaved = () => {
             fetchNotes();
         };

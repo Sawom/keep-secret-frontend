@@ -13,10 +13,12 @@ export function useNotebooks() {
     const notebooksRef = useRef<Notebook[]>([]);
     const originalNotebooksRef = useRef<Notebook[]>([]);
 
-    // ১. সব সক্রিয় নোটবুক ফেচ করা
-    const fetchNotebooks = useCallback(async () => {
+   // ১. সব সক্রিয় নোটবুক ফেচ করা (route change ba re-mount er shomoy data vanish hobar problem fix korar jonno)
+    const fetchNotebooks = useCallback(async (isInitial = false) => {
         try {
-            setLoading(true);
+            if (isInitial || notebooks.length === 0) {
+                setLoading(true);
+            }
             const data = await notebookService.getNotebooks();
             setNotebooks(data);
             setError(null);
@@ -25,10 +27,11 @@ export function useNotebooks() {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [notebooks.length]);
 
     useEffect(() => {
-        fetchNotebooks();
+        // 1st time mount
+        fetchNotebooks(true);
     }, [fetchNotebooks]);
 
     // ২. আইডি দিয়ে নির্দিষ্ট একটি নোটবুক ফেচ করা
