@@ -26,7 +26,7 @@ export default function SingleNotebookPage({ params }: { params: Promise<{ id: s
 
                 // এই নোটবুকের অধীনে থাকা নোটগুলো ফেচ করা (নোটসের গেট নোটে notebookId কুয়েরি পাস করে)
                 const notesData = await noteService.getNotes(notebookId);
-                setNotes(notesData as any[]);
+                setNotes(notesData as any);
             } catch (error) {
                 console.error('Failed to load notebook details:', error);
             } finally {
