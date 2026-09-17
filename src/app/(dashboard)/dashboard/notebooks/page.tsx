@@ -1,13 +1,12 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { notebookService, Notebook } from '@/services/notebook.service';
+import React, { useState } from 'react';
+import { useNotebooks } from '@/hooks/useNotebooks'; // কাস্টম হুক ইম্পোর্ট
 import { Folder, Plus, Trash2, BookOpen, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function NotebooksPage() {
-    const [notebooks, setNotebooks] = useState<Notebook[]>([]);
-    const [loading, setLoading] = useState<boolean>(true);
+    const { notebooks, loading, createNotebook, softDeleteNotebook } = useNotebooks();
     const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
 
     // ফর্ম ইনপুট স্টেট
@@ -16,31 +15,14 @@ export default function NotebooksPage() {
     const [color, setColor] = useState('#3B82F6');
     const [submitting, setSubmitting] = useState(false);
 
-    // ১. নোটবুক ফেচ করার ফাংশন
-    const fetchNotebooks = async () => {
-        try {
-            setLoading(true);
-            const data = await notebookService.getNotebooks();
-            setNotebooks(data);
-        } catch (error) {
-            console.error('Failed to fetch notebooks:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchNotebooks();
-    }, []);
-
-    // ২. নতুন নোটবুক ক্রিয়েট সাবমিট হ্যান্ডলার
+    // নতুন নোটবুক ক্রিয়েট সাবমিট হ্যান্ডলার (হুক থেকে)
     const handleCreateNotebook = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!title.trim()) return;
 
         try {
             setSubmitting(true);
-            await notebookService.createNotebook({
+            await createNotebook({
                 title,
                 description,
                 color,
@@ -51,7 +33,6 @@ export default function NotebooksPage() {
             setDescription('');
             setColor('#3B82F6');
             setIsCreateModalOpen(false);
-            fetchNotebooks(); // লিস্ট রিফ্রেশ করা
         } catch (error) {
             console.error('Failed to create notebook:', error);
         } finally {
@@ -59,13 +40,12 @@ export default function NotebooksPage() {
         }
     };
 
-    // ৩. নোটবুক ডিলিট হ্যান্ডলার
+    // নোটবুক ডিলিট হ্যান্ডলার (সফট ডিলিট / ট্র্যাশে পাঠানো)
     const handleDeleteNotebook = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this notebook? Notes inside will not be deleted.')) return;
+        if (!confirm('Are you sure you want to move this notebook to trash? Notes inside will not be deleted.')) return;
 
         try {
-            await notebookService.deleteNotebook(id);
-            setNotebooks(notebooks.filter((item) => item.id !== id));
+            await softDeleteNotebook(id);
         } catch (error) {
             console.error('Failed to delete notebook:', error);
         }
