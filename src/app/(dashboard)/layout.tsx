@@ -23,7 +23,7 @@ export default function DashboardGroupLayout({
     const [isCheckingAuth, setIsCheckingAuth] = useState(true);
     // Google Keep States
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    
+
     // Take a note modal states
     const [isNoteExpanded, setIsNoteExpanded] = useState(false);
     const [noteTitle, setNoteTitle] = useState('');
@@ -127,7 +127,7 @@ export default function DashboardGroupLayout({
     return (
         <div className="min-h-screen flex flex-col bg-zinc-50 dark:bg-zinc-950">
             {/* Top Navigation Bar */}
-            <header className="h-16 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex items-center justify-between px-4 sticky top-0 z-30">
+            <header className="h-16 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex items-center justify-between px-4 sticky top-0 z-30 shrink-0 ">
                 <div className="flex items-center gap-4">
                     <button
                         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -166,7 +166,7 @@ export default function DashboardGroupLayout({
             </header>
 
             {/* Body Layout with Sidebar and Main Content */}
-            <div className="flex flex-1 overflow-hidden relative">
+            <div className="flex flex-1 min-h-0 relative">
                 {isSidebarOpen && (
                     <div
                         onClick={() => setIsSidebarOpen(false)}
@@ -175,10 +175,12 @@ export default function DashboardGroupLayout({
                 )}
 
                 <aside
-                    className={`transition-all duration-300 border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex flex-col z-30 absolute inset-y-0 left-0 md:relative ${isSidebarOpen ? 'w-64 translate-x-0 shadow-2xl md:shadow-none' : '-translate-x-full md:translate-x-0 md:w-20'
+                    className={`transition-all duration-300 border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex flex-col z-30 fixed md:sticky top-16 left-0 h-[calc(100vh-4rem)] ${isSidebarOpen
+                        ? 'w-64 translate-x-0 shadow-2xl md:shadow-none'
+                        : '-translate-x-full md:translate-x-0 md:w-20'
                         }`}
                 >
-                    <nav className="flex-1 py-3 space-y-1">
+                    <nav className="flex-1 py-3 space-y-1 overflow-y-auto overflow-x-hidden">
                         {navItems.map((item) => {
                             const Icon = item.icon;
                             const isActive = pathname === item.href;
@@ -201,16 +203,16 @@ export default function DashboardGroupLayout({
                         })}
                     </nav>
 
-                    <div className="p-4 border-t border-zinc-200 dark:border-zinc-800">
+                    <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 shrink-0 ">
                         <LogoutButton />
                     </div>
 
-                    <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 space-y-3 mb-12">
+                    <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 space-y-3 mb-12 shrink-0 ">
                         <ThemeToggle />
                     </div>
                 </aside>
 
-                <main className="flex-1 overflow-y-auto p-4 md:p-8 w-full flex flex-col items-center">
+                <main className="flex-1 min-w-0 min-h-0 overflow-y-auto p-4 md:p-8 w-full flex flex-col items-center">
                     <div className="w-full max-w-2xl mb-8 z-10">
                         <div
                             className={`bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-xl shadow-md transition-all duration-200 ${isNoteExpanded ? 'p-4' : 'px-4 py-3 flex items-center justify-between cursor-pointer hover:shadow-lg'
