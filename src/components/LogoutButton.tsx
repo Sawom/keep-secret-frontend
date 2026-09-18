@@ -61,7 +61,7 @@ export default function LogoutButton() {
         <button
             onClick={handleLogout}
             disabled={isLoggingOut}
-            className="items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-950/30 transition-colors disabled:opacity-50 cursor-pointer"
+            className="items-center gap-3 px-4 py-3  rounded-xl text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-950/30 transition-colors disabled:opacity-50 cursor-pointer"
         >
             {isLoggingOut ? (
                 <Loader2 className="w-4 h-4 animate-spin" />

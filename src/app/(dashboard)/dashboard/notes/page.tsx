@@ -98,7 +98,7 @@ function NotesContent() {
                                             e.stopPropagation();
                                             handleTogglePin(note.id, note.isPinned);
                                         }}
-                                        className={`p-1.5 rounded-full transition-opacity ${note.isPinned
+                                        className={`p-1.5 rounded-full transition-opacity cursor-pointer ${note.isPinned
                                             ? 'opacity-100 text-amber-500 bg-amber-50 dark:bg-amber-950/50'
                                             : 'opacity-0 group-hover:opacity-100 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
                                             }`}
@@ -139,7 +139,7 @@ function NotesContent() {
                                             e.stopPropagation();
                                             setNoteToDelete(note.id);
                                         }}
-                                        className="p-1 hover:bg-red-50 dark:hover:bg-red-950/30 text-zinc-400 hover:text-red-600 rounded-full transition-colors"
+                                        className="p-1 hover:bg-red-50 dark:hover:bg-red-950/30 text-zinc-400 hover:text-red-600 rounded-full transition-colors cursor-pointer"
                                         title="Delete note"
                                     >
                                         <Trash2 className="w-4 h-4" />
@@ -173,7 +173,7 @@ function NotesContent() {
                                 <button
                                     type="button"
                                     onClick={() => handleTogglePin(activeNote.id, activeNote.isPinned)}
-                                    className={`p-1.5 rounded-full transition-colors ${activeNote?.isPinned
+                                    className={`p-1.5 rounded-full transition-colors cursor-pointer ${activeNote?.isPinned
                                         ? 'text-amber-500 bg-amber-50 dark:bg-amber-950/50'
                                         : 'text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
                                         }`}
@@ -204,7 +204,7 @@ function NotesContent() {
 
                             <div className="flex items-center justify-between pt-3 border-t border-zinc-100 dark:border-zinc-800">
                                 <div className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400">
-                                    
+
                                     {/* create update message */}
                                     {(() => {
                                         const created = new Date(activeNote.createdAt).getTime();
@@ -219,7 +219,7 @@ function NotesContent() {
                                             </span>
                                         );
                                     })()}
-                                   
+
                                 </div>
 
                                 <div className="flex items-center gap-2">
@@ -262,13 +262,13 @@ function NotesContent() {
                         <div className="flex justify-end gap-2 pt-2">
                             <button
                                 onClick={() => setNoteToDelete(null)}
-                                className="px-4 py-2 text-sm font-medium text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+                                className="px-4 py-2 text-sm font-medium text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors cursor-pointer "
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={confirmDelete}
-                                className="px-4 py-2 text-sm font-medium bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors shadow-sm"
+                                className="px-4 py-2 text-sm font-medium bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors shadow-sm cursor-pointer "
                             >
                                 OK
                             </button>
