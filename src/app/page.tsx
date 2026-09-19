@@ -4,49 +4,61 @@ import ThemeToggle from '@/components/ThemeToggle';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Lock, Sparkles, KeyRound, EyeOff, ArrowRight, Loader2, FileText, Layers, Cpu } from 'lucide-react';
-import { useUser } from '@/hooks/useUser';
 import LogoutButton from '@/components/LogoutButton';
-import { useAuthStore } from '@/store/useAuthStore';
 import { api } from '@/services/api';
 
 export default function HomePage() {
-  const [typedText, setTypedText] = useState('Project KeepSecret: Zero-knowledge architecture implementation in progress...');
+  const [typedText, setTypedText] = useState(
+    'Project KeepSecret: Zero-knowledge architecture implementation in progress...'
+  );
 
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
-  const [currentUser, setCurrentUser] = useState<any>(null); // লোকাল ইউজার স্টেট যা রেস কন্ডিশন আটকাবে
+  const [isCheckingAuth, setIsCheckingAuth] =
+    useState(true);
 
-  const setAccessToken = useAuthStore((state) => state.setAccessToken);
+  const [currentUser, setCurrentUser] =
+    useState<any>(null);
 
-  // হোমপেজে সরাসরি সেশন চেক এবং ইউজার ডেটা ফেচ একসাথে হ্যান্ডেল করা
   useEffect(() => {
     const verifySession = async () => {
       try {
-        let token = useAuthStore.getState().accessToken;
+        // প্রথমে HttpOnly cookie সহ profile check
+        const userResponse: any =
+          await api.get('/auth/profile');
 
-        // ১. যদি টোকেন না থাকে, সাইলেন্ট রিফ্রেশ কল করো
-        if (!token) {
-          const res: any = await api.post('/auth/refresh', {});
-          if (res?.accessToken) {
-            setAccessToken(res.accessToken);
-            token = res.accessToken;
-          }
-        }
+        const user =
+          userResponse?.user ??
+          userResponse;
 
-        // ২. টোকেন পাওয়ার সাথে সাথেই ইউজারের প্রোফাইল ফেচ করে নাও (useUser() এর ভরসায় না থেকে)
-        if (token) {
-          const userRes: any = await api.get('/auth/profile');
-          setCurrentUser(userRes?.user || userRes);
+        setCurrentUser(user);
+      } catch (profileError) {
+        try {
+          // Access session expired হলে refresh cookie দিয়ে
+          // backend নতুন session cookie তৈরি করবে
+          await api.post('/auth/refresh', {});
+
+          // Refresh সফল হলে আবার profile fetch
+          const userResponse: any =
+            await api.get('/auth/profile');
+
+          const user =
+            userResponse?.user ??
+            userResponse;
+
+          setCurrentUser(user);
+        } catch (refreshError) {
+          console.log(
+            'No active session found'
+          );
+
+          setCurrentUser(null);
         }
-      } catch (err) {
-        console.log('No active session found');
-        setCurrentUser(null);
       } finally {
         setIsCheckingAuth(false);
       }
     };
 
     verifySession();
-  }, [setAccessToken]);
+  }, []);
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300 relative overflow-hidden">

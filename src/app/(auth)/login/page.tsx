@@ -16,24 +16,36 @@ function LoginForm() {
     const [loading, setLoading] = useState(false);
     const router = useRouter();
 
-    const setAccessToken = useAuthStore((state) => state.setAccessToken);
+    // const setAccessToken = useAuthStore((state) => state.setAccessToken);
     const setUser = useAuthStore((state) => state.setUser);
 
     const searchParams = useSearchParams();
     const isRegistered = searchParams.get('registered');
     const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
 
-    const handleLogin = async (e: React.FormEvent) => {
+    const handleLogin = async (
+        e: React.FormEvent
+    ) => {
         e.preventDefault();
+
         setError('');
         setLoading(true);
 
         try {
-            const response: any = await authService.login({ email, password });
+            const response: any =
+                await authService.login({
+                    email,
+                    password,
+                });
 
-            // Zustand স্টেটে টোকেন ও ইউজার সেভ করা
-            setAccessToken(response.accessToken);
+            /*
+             * 🔧 CHANGED:
+             *
+             * Access token এখন HttpOnly cookie।
+             * তাই frontend token save করবে না।
+             */
             setUser(response.user);
+
             router.push(callbackUrl);
         } catch (err: any) {
             setError(

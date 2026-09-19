@@ -1,59 +1,153 @@
-import { useAuthStore } from '@/store/useAuthStore';
-import axios from 'axios';
+import axios, {
+    AxiosError,
+    InternalAxiosRequestConfig,
+} from 'axios';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
+interface RetryableRequestConfig
+    extends InternalAxiosRequestConfig {
+    _retry?: boolean;
+}
+
+/*
+ * 🔧 CHANGED:
+ *
+ * Access token আর frontend থেকে manually read করা হবে না।
+ *
+ * Access token এবং refresh token দুটোই HttpOnly cookie।
+ *
+ * Browser automatically cookie পাঠাবে কারণ
+ * withCredentials: true আছে।
+ */
 export const api = axios.create({
     baseURL: API_BASE_URL,
-    withCredentials: true, // কুকি (refresh token) পাঠানোর জন্য বাধ্যতামূলক
+    withCredentials: true,
     headers: {
         'Content-Type': 'application/json',
     },
 });
 
-// Request Interceptor: প্রতি রিকোয়েস্টের সাথে Zustand থেকে Access Token যুক্ত করে দেওয়া
+/*
+ * 🔧 CHANGED:
+ *
+ * Access token HttpOnly হওয়ায় এখানে আর
+ * Authorization header manually সেট করা হবে না।
+ *
+ * Browser নিজে accessToken cookie পাঠাবে।
+ */
 api.interceptors.request.use(
     (config) => {
-        const token = useAuthStore.getState().accessToken;
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
         return config;
     },
     (error) => Promise.reject(error)
 );
 
-// Response Interceptor: 401 এরর আসলে সাইলেন্টলি রিফ্রেশ টোকেন দিয়ে এক্সেস টোকেন রিনিউ করা
+/*
+ * 🔧 CHANGED:
+ *
+ * একই সময়ে একাধিক API request 401 করলে
+ * একাধিক refresh request না পাঠিয়ে
+ * একটি refresh request-এর Promise সবাই share করবে।
+ */
+let refreshPromise: Promise<void> | null = null;
+
+const refreshAccessToken = async (): Promise<void> => {
+    if (!refreshPromise) {
+        refreshPromise = axios
+            .post(
+                `${API_BASE_URL}/auth/refresh`,
+                {},
+                {
+                    withCredentials: true,
+                }
+            )
+            .then((response) => {
+                /*
+                 * Backend এখন access token HttpOnly cookie-তে
+                 * set করবে।
+                 *
+                 * তাই frontend-এ token save করার দরকার নেই।
+                 */
+                return;
+            })
+            .finally(() => {
+                refreshPromise = null;
+            });
+    }
+
+    return refreshPromise;
+};
+
+/*
+ * 🔧 CHANGED:
+ *
+ * 401 হলে silently access token refresh করবে।
+ *
+ * Refresh successful হলে original request আবার চালাবে।
+ *
+ * Refresh endpoint নিজে 401 দিলে infinite loop হবে না,
+ * কারণ refresh request raw axios দিয়ে করা হচ্ছে api দিয়ে নয়।
+ */
 api.interceptors.response.use(
     (response) => response.data,
-    async (error) => {
-        const originalRequest = error.config;
 
-        if (error.response?.status === 401 && !originalRequest._retry) {
-            originalRequest._retry = true;
+    async (error: AxiosError) => {
+        const originalRequest =
+            error.config as RetryableRequestConfig | undefined;
 
-            try {
-                // সাইলেন্টলি নতুন এক্সেস টোকেনের জন্য কল করা
-                const res: any = await axios.post(
-                    `${API_BASE_URL}/auth/refresh`,
-                    {},
-                    { withCredentials: true }
-                );
-
-                const newAccessToken = res.accessToken;
-                useAuthStore.getState().setAccessToken(newAccessToken);
-
-                // পুরানো আটকে থাকা রিকোয়েস্ট নতুন টোকেন দিয়ে পুনরায় চালানো
-                originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-                return api(originalRequest);
-            } catch (refreshError) {
-                // রিফ্রেশ টোকেনও মেয়াদোত্তীর্ণ হলে স্টেট ক্লিয়ার করে লগইন পেজে পাঠানো
-                useAuthStore.getState().logout();
-                window.location.href = '/login?callbackUrl=/dashboard';
-                return Promise.reject(refreshError);
-            }
+        if (
+            error.response?.status !== 401 ||
+            !originalRequest ||
+            originalRequest._retry
+        ) {
+            return Promise.reject(error);
         }
 
-        return Promise.reject(error);
+        /*
+         * Original request-কে একবারের বেশি retry করা যাবে না।
+         */
+        originalRequest._retry = true;
+
+        try {
+            /*
+             * Access token expired হলে refresh cookie ব্যবহার করে
+             * নতুন access token cookie সেট করা হবে।
+             */
+            await refreshAccessToken();
+
+            /*
+             * নতুন accessToken cookie browser automatically
+             * পরবর্তী request-এ পাঠাবে।
+             */
+            return api(originalRequest);
+        } catch (refreshError) {
+            /*
+             * Refresh token-ও invalid/expired হলে
+             * local auth state clear করা হবে।
+             *
+             * Sensitive note cache-ও clear করা হবে।
+             */
+            if (typeof window !== 'undefined') {
+                const { useAuthStore } =
+                    await import('@/store/useAuthStore');
+
+                const { useNotesStore } =
+                    await import('@/store/useNotesStore');
+
+                const { useNotebookStore } =
+                    await import('@/store/useNotebookStore');
+
+                useAuthStore.getState().logout();
+                useNotesStore.getState().clearNotes();
+                useNotebookStore.getState().clearNotebooks();
+
+                window.location.replace(
+                    '/login?callbackUrl=/dashboard'
+                );
+            }
+
+            return Promise.reject(refreshError);
+        }
     }
 );

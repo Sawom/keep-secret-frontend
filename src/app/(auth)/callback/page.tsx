@@ -1,3 +1,5 @@
+// ei page tai bad zabe.*******************
+
 'use client';
 
 export const dynamic = 'force-dynamic';
@@ -11,17 +13,17 @@ function CallbackContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const token = searchParams.get('token');
-    const setAccessToken = useAuthStore((state) => state.setAccessToken);
+    // const setAccessToken = useAuthStore((state) => state.setAccessToken);
 
     useEffect(() => {
         if (token) {
             // Zustand স্টেটে এক্সেস টোকেন সেভ করা
-            setAccessToken(token);
+            // setAccessToken(token);
             router.replace('/dashboard');
         } else {
             router.replace('/login');
         }
-    }, [token, setAccessToken, router]);
+    }, [token,  router]);
 
     return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-zinc-50 dark:bg-zinc-950">

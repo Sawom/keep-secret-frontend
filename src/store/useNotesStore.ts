@@ -9,6 +9,7 @@ export interface Note {
     position: number;
     createdAt: string;
     updatedAt: string;
+    notebookId?: string;
 }
 
 interface NotesStore {
@@ -18,52 +19,96 @@ interface NotesStore {
     hasLoaded: boolean;
     hasTrashLoaded: boolean;
 
+    nextCursor: string | null;
+    hasMore: boolean;
+
     setNotes: (
-        notes: Note[] | ((previousNotes: Note[]) => Note[])
+        notes:
+            | Note[]
+            | ((
+                previousNotes: Note[]
+            ) => Note[])
     ) => void;
+
+    setPagination: (
+        nextCursor: string | null,
+        hasMore: boolean
+    ) => void;
+
+    resetPagination: () => void;
 
     setTrashNotes: (
         notes:
             | Note[]
-            | ((previousNotes: Note[]) => Note[])
+            | ((
+                previousNotes: Note[]
+            ) => Note[])
     ) => void;
 
     clearNotes: () => void;
 }
 
-export const useNotesStore = create<NotesStore>((set) => ({
-    notes: [],
-    trashNotes: [],
+export const useNotesStore =
+    create<NotesStore>((set) => ({
+        notes: [],
+        trashNotes: [],
 
-    hasLoaded: false,
-    hasTrashLoaded: false,
+        hasLoaded: false,
+        hasTrashLoaded: false,
 
-    setNotes: (notes) =>
-        set((state) => ({
-            notes:
-                typeof notes === 'function'
-                    ? notes(state.notes)
-                    : notes,
+        nextCursor: null,
+        hasMore: true,
 
-            hasLoaded: true,
-        })),
+        setNotes: (notes) =>
+            set((state) => ({
+                notes:
+                    typeof notes ===
+                        'function'
+                        ? notes(
+                            state.notes
+                        )
+                        : notes,
 
-    setTrashNotes: (notes) =>
-        set((state) => ({
-            trashNotes:
-                typeof notes === 'function'
-                    ? notes(state.trashNotes)
-                    : notes,
+                hasLoaded: true,
+            })),
 
-            hasTrashLoaded: true,
-        })),
+        setPagination: (
+            nextCursor,
+            hasMore
+        ) =>
+            set({
+                nextCursor,
+                hasMore,
+            }),
 
-    clearNotes: () =>
-        set({
-            notes: [],
-            trashNotes: [],
+        resetPagination: () =>
+            set({
+                nextCursor: null,
+                hasMore: true,
+            }),
 
-            hasLoaded: false,
-            hasTrashLoaded: false,
-        }),
-}));
+        setTrashNotes: (notes) =>
+            set((state) => ({
+                trashNotes:
+                    typeof notes ===
+                        'function'
+                        ? notes(
+                            state.trashNotes
+                        )
+                        : notes,
+
+                hasTrashLoaded: true,
+            })),
+
+        clearNotes: () =>
+            set({
+                notes: [],
+                trashNotes: [],
+
+                hasLoaded: false,
+                hasTrashLoaded: false,
+
+                nextCursor: null,
+                hasMore: true,
+            }),
+    }));

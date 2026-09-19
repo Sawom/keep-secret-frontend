@@ -1,17 +1,29 @@
 import { create } from 'zustand';
 
 interface AuthState {
-    accessToken: string | null;
     user: any | null;
-    setAccessToken: (token: string | null) => void;
+
     setUser: (user: any) => void;
+
     logout: () => void;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
-    accessToken: null,
-    user: null,
-    setAccessToken: (accessToken) => set({ accessToken }),
-    setUser: (user) => set({ user }),
-    logout: () => set({ accessToken: null, user: null }),
-}));
+export const useAuthStore =
+    create<AuthState>((set) => ({
+        user: null,
+
+        setUser: (user) =>
+            set({
+                user,
+            }),
+
+        logout: () =>
+            set({
+                user: null,
+            }),
+    }));
+
+// Access token আর রাখার দরকার নেই।
+// কেন? কারণ: HttpOnly cookie
+// এর উদ্দেশ্যই হলো JS যেন token read করতে না পারে।
+// তাই Zustand-এ access token রাখা security architecture-এর সাথে যায় না।

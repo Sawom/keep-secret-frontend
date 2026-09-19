@@ -1,13 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { noteService } from '@/services/note.service';
-import { useAuthStore } from '@/store/useAuthStore';
 import { useNotesStore, Note } from '@/store/useNotesStore';
 
-export function useNotes() {
+export function useNotes(searchQuery = '') {
+
     /*
      * 🔧 CHANGED:
      *
-     * Notes আর শুধু hook-এর local state-এ থাকবে না।
+     * Notes আর hook-এর local state-এ থাকবে না।
      * Zustand store থেকে নেওয়া হবে যাতে route change হলেও
      * আগের fetched data memory-তে থাকে।
      */
@@ -32,45 +32,70 @@ export function useNotes() {
         (state) => state.setTrashNotes
     );
 
-    const accessToken = useAuthStore(
-        (state) => state.accessToken
-    );
-
     /*
      * 🔧 CHANGED:
      *
-     * Cached data থাকলে প্রথম render থেকেই data দেখানো হবে।
-     * তাই route change-এর সময় আবার full-page loading spinner
-     * দেখানো হবে না।
+     * accessToken এখন HttpOnly cookie-তে থাকে।
+     * তাই frontend থেকে accessToken পড়ার প্রয়োজন নেই।
+     *
+     * API request automatically cookie পাঠাবে।
+     *
+     * Cache থাকলে প্রথম render থেকেই data দেখানো হবে।
      */
     const [loading, setLoading] = useState(
-        !hasLoaded && !!accessToken
+        !hasLoaded
+    );
+
+    const [loadingMore, setLoadingMore] = useState(false);
+
+    const [searchResults, setSearchResults] =
+        useState<Note[]>([]);
+
+    const [searchLoading, setSearchLoading] =
+        useState(false);
+
+    /*
+ * Search request cancel করার জন্য।
+ */
+    const searchControllerRef =
+        useRef<AbortController | null>(null);
+
+    const hasMore = useNotesStore(
+        (state) => state.hasMore
     );
 
     const [trashLoading, setTrashLoading] = useState(
-        !hasTrashLoaded && !!accessToken
+        !hasTrashLoaded
     );
 
     // ড্র্যাগ এন্ড ড্রপের জন্য স্টেট
-    const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
+    const [draggedItemIndex, setDraggedItemIndex] =
+        useState<number | null>(null);
 
     const notesRef = useRef<Note[]>(notes);
-    const draggedItemIndexRef = useRef<number | null>(null);
-    const originalNotesRef = useRef<Note[]>([]);
-    const isReorderingRef = useRef(false);
+    const draggedItemIndexRef =
+        useRef<number | null>(null);
+    const originalNotesRef =
+        useRef<Note[]>([]);
+    const isReorderingRef =
+        useRef(false);
 
     // ডিলিট কনফার্মেশন পপআপের জন্য স্টেট
-    const [noteToDelete, setNoteToDelete] = useState<string | null>(null);
+    const [noteToDelete, setNoteToDelete] =
+        useState<string | null>(null);
 
     // edit and save states
-    const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+    const [editingNoteId, setEditingNoteId] =
+        useState<string | null>(null);
     const [editTitle, setEditTitle] = useState('');
     const [editBody, setEditBody] = useState('');
-    const [isUpdating, setIsUpdating] = useState(false);
+    const [isUpdating, setIsUpdating] =
+        useState(false);
 
     // ডাবল রিকোয়েস্ট রোধ করার জন্য useRef ব্যবহার করা হলো
     const isUpdatingRef = useRef(false);
-    const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+    const autoSaveTimerRef =
+        useRef<NodeJS.Timeout | null>(null);
 
     /*
      * 🔧 CHANGED:
@@ -104,10 +129,13 @@ export function useNotes() {
             isUpdatingRef.current = true;
             setIsUpdating(true);
 
-            await noteService.updateNote(editingNoteId, {
-                title: editTitle,
-                content: editBody,
-            });
+            await noteService.updateNote(
+                editingNoteId,
+                {
+                    title: editTitle,
+                    content: editBody,
+                }
+            );
 
             // লোকাল স্টেট আপডেট করা যাতে UI ও ডেট সাথে সাথে রিফ্লেক্ট করে
             setNotes((prevNotes) =>
@@ -117,13 +145,17 @@ export function useNotes() {
                             ...note,
                             title: editTitle,
                             content: editBody,
-                            updatedAt: new Date().toISOString(),
+                            updatedAt:
+                                new Date().toISOString(),
                         }
                         : note
                 )
             );
         } catch (error) {
-            console.error('Failed to update note:', error);
+            console.error(
+                'Failed to update note:',
+                error
+            );
         } finally {
             isUpdatingRef.current = false;
             setIsUpdating(false);
@@ -135,24 +167,36 @@ export function useNotes() {
         if (!editingNoteId) return;
 
         if (autoSaveTimerRef.current) {
-            clearTimeout(autoSaveTimerRef.current);
+            clearTimeout(
+                autoSaveTimerRef.current
+            );
         }
 
-        autoSaveTimerRef.current = setTimeout(() => {
-            handleSaveEdit();
-        }, 10000); // ১০ সেকেন্ড
+        autoSaveTimerRef.current =
+            setTimeout(() => {
+                handleSaveEdit();
+            }, 10000); // ১০ সেকেন্ড
 
         return () => {
             if (autoSaveTimerRef.current) {
-                clearTimeout(autoSaveTimerRef.current);
+                clearTimeout(
+                    autoSaveTimerRef.current
+                );
             }
         };
-    }, [editTitle, editBody, editingNoteId]);
+    }, [
+        editTitle,
+        editBody,
+        editingNoteId,
+    ]);
 
     // ক্লোজ করার ফাংশন
     const handleCloseModal = async () => {
         if (autoSaveTimerRef.current) {
-            clearTimeout(autoSaveTimerRef.current);
+            clearTimeout(
+                autoSaveTimerRef.current
+            );
+
             autoSaveTimerRef.current = null;
         }
 
@@ -164,84 +208,243 @@ export function useNotes() {
 
     // ১. নোট ফেচ করা
     const fetchNotes = useCallback(
-        async (isInitial = false) => {
-            if (!accessToken) {
-                setLoading(false);
+        async (loadMore = false) => {
+            const store = useNotesStore.getState();
+
+            /*
+             * Initial fetch হলে loading দেখাবে।
+             */
+            if (!loadMore && !store.hasLoaded) {
+                setLoading(true);
+            }
+
+            /*
+             * আর page না থাকলে request যাবে না।
+             */
+            if (
+                loadMore &&
+                (!store.hasMore || !store.nextCursor)
+            ) {
                 return;
             }
 
             try {
-                /*
-                 * 🔧 CHANGED:
-                 *
-                 * প্রথমবার কোনো cached data না থাকলে spinner দেখানো হবে।
-                 *
-                 * কিন্তু Zustand-এ আগের data থাকলে loading=true করা হবে না।
-                 * ফলে route change-এর সময় আগের data screen-এ থাকবে।
-                 */
-                if (isInitial && !hasLoaded) {
-                    setLoading(true);
-                }
+                const cursor = loadMore
+                    ? store.nextCursor
+                    : undefined;
 
-                const response: any =
-                    await noteService.getNotes();
-
-                const notesData = Array.isArray(response)
-                    ? response
-                    : response?.data ||
-                    response?.notes ||
-                    [];
-
-                // পিন করা নোটগুলো সবসময় ওপরে এবং রিসেন্ট নোটগুলো সাজিয়ে রাখা
-                const sortedNotes = [...notesData].sort(
-                    (a: Note, b: Note) => {
-                        if (a.isPinned !== b.isPinned) {
-                            return a.isPinned ? -1 : 1;
-                        }
-
-                        return a.position - b.position;
-                    }
+                const response = await noteService.getNotes(
+                    undefined,
+                    20,
+                    cursor || undefined,
                 );
 
-                notesRef.current = sortedNotes;
+                /*
+                 * noteService থেকে pagination object পাওয়া যাচ্ছে:
+                 *
+                 * {
+                 *   data: Note[],
+                 *   nextCursor: string | null,
+                 *   hasMore: boolean
+                 * }
+                 */
+                const pageData: Note[] = response.data ?? [];
+
+                setNotes((previous: Note[]) => {
+                    /*
+                     * First page হলে replace।
+                     */
+                    if (!loadMore) {
+                        return pageData;
+                    }
+
+                    /*
+                     * Next page হলে duplicate আটকানো।
+                     */
+                    const existingIds = new Set(
+                        previous.map((note: Note) => note.id),
+                    );
+
+                    const newNotes = pageData.filter(
+                        (note: Note) =>
+                            !existingIds.has(note.id),
+                    );
+
+                    return [
+                        ...previous,
+                        ...newNotes,
+                    ];
+                });
 
                 /*
-                 * 🔧 CHANGED:
-                 *
-                 * Local setNotes-এর পরিবর্তে Zustand store update করা হচ্ছে।
-                 * এতে route change হলেও data memory-তে থাকবে।
+                 * Pagination state update।
                  */
-                setNotes(sortedNotes);
+                useNotesStore
+                    .getState()
+                    .setPagination(
+                        response.nextCursor || null,
+                        response.hasMore ?? false,
+                    );
             } catch (error) {
                 console.error(
                     'Failed to fetch notes:',
-                    error
+                    error,
                 );
-
-                /*
-                 * 🔧 CHANGED:
-                 *
-                 * Backend request fail করলেও cached data থাকলে
-                 * সেটা screen থেকে remove করা হবে না।
-                 */
             } finally {
-                setLoading(false);
+                if (!loadMore) {
+                    setLoading(false);
+                }
             }
         },
-        [
-            accessToken,
-            hasLoaded,
-            setNotes,
-        ]
+        [setNotes],
     );
+
+    /*
+     * 🔧 NEW:
+     *
+     * Scroll-এর কাছাকাছি গেলে পরের ২০টি note load করবে।
+     *
+     * Duplicate request আটকানোর জন্য ref ব্যবহার করা হচ্ছে।
+     */
+    const isLoadingMoreRef = useRef(false);
+
+    const loadMoreNotes =
+        useCallback(async () => {
+            const store =
+                useNotesStore.getState();
+
+            if (
+                isLoadingMoreRef.current ||
+                !store.hasMore ||
+                !store.nextCursor
+            ) {
+                return;
+            }
+
+            try {
+                isLoadingMoreRef.current =
+                    true;
+
+                setLoadingMore(true);
+
+                await fetchNotes(true);
+            } catch (error) {
+                console.error(
+                    'Failed to load more notes:',
+                    error,
+                );
+            } finally {
+                isLoadingMoreRef.current =
+                    false;
+
+                setLoadingMore(false);
+            }
+        }, [fetchNotes]);
+
+
+    // const searchRequestIdRef =
+    //     useRef(0);
+
+    /*
+  * Search API।
+  *
+  * Search query change হলে পুরোনো request cancel
+  * করে নতুন request পাঠাবে।
+  */
+    useEffect(() => {
+        const query =
+            searchQuery.trim();
+
+        /*
+         * Search query নেই।
+         *
+         * কোনো search API request হবে না।
+         */
+        if (!query) {
+            searchControllerRef.current?.abort();
+
+            searchControllerRef.current =
+                null;
+
+            setSearchResults([]);
+
+            setSearchLoading(false);
+
+            return;
+        }
+
+        /*
+         * আগের search request cancel।
+         */
+        searchControllerRef.current?.abort();
+
+        const controller = new AbortController();
+
+        searchControllerRef.current = controller;
+
+        const performSearch = async () => {
+            try {
+                setSearchLoading(true);
+
+                const response =
+                    await noteService.searchNotes(
+                        query,
+                        50,
+                        controller.signal,
+                    );
+
+                /*
+                 * পুরোনো request হলে ignore।
+                 */
+                if (controller.signal.aborted) {
+                    return;
+                }
+
+                const searchData: Note[] =
+                    response.data ?? [];
+
+                setSearchResults(searchData);
+            } catch (error: any) {
+                /*
+                 * Cancelled request ignore।
+                 */
+                if (controller.signal.aborted) {
+                    return;
+                }
+
+                console.error(
+                    'Failed to search notes:',
+                    error,
+                );
+
+                setSearchResults([]);
+            } finally {
+                if (!controller.signal.aborted) {
+                    setSearchLoading(false);
+                }
+            }
+        };
+
+
+        performSearch();
+
+        return () => {
+            controller.abort();
+        };
+    }, [searchQuery]);
+
 
     // ২. ট্র্যাশের নোটগুলো ফেচ করা
     const fetchTrashNotes = useCallback(
         async (isInitial = false) => {
-            if (!accessToken) {
-                setTrashLoading(false);
-                return;
-            }
+            /*
+             * 🔧 CHANGED:
+             *
+             * accessToken check removed.
+             *
+             * HttpOnly cookie automatically
+             * authentication handle করবে।
+             */
 
             try {
                 /*
@@ -250,18 +453,22 @@ export function useNotes() {
                  * Trash cache আগে থেকেই থাকলে route change-এর সময়
                  * নতুন spinner দেখানো হবে না।
                  */
-                if (isInitial && !hasTrashLoaded) {
+                if (
+                    isInitial &&
+                    !hasTrashLoaded
+                ) {
                     setTrashLoading(true);
                 }
 
                 const response: any =
                     await noteService.getTrashNotes();
 
-                const trashData = Array.isArray(response)
-                    ? response
-                    : response?.data ||
-                    response?.notes ||
-                    [];
+                const trashData =
+                    Array.isArray(response)
+                        ? response
+                        : response?.data ||
+                        response?.notes ||
+                        [];
 
                 /*
                  * 🔧 CHANGED:
@@ -279,33 +486,31 @@ export function useNotes() {
             }
         },
         [
-            accessToken,
             hasTrashLoaded,
             setTrashNotes,
         ]
     );
 
-    // পেজ লোড ও ইভেন্ট শোনার জন্য useEffect
+    // পেজ লোড ও ইভেন্ট শোনার জন্য useEffect (Initial fetch)
     useEffect(() => {
-        // টোকেন না থাকলে লোডিং ফলস করে দেব যাতে সারাক্ষণ লোডিং হয়ে না থাকে
-        if (!accessToken) {
-            setLoading(false);
-            setTrashLoading(false);
-            return;
-        }
+        const loadInitialNotes =
+            async () => {
+                const store =
+                    useNotesStore.getState();
 
-        /*
-         * 🔧 CHANGED:
-         *
-         * Zustand cache থাকলে cached data already UI-তে থাকবে।
-         * এরপর backend থেকে background refresh হবে।
-         *
-         * প্রথমবার data না থাকলে শুধু spinner দেখাবে।
-         */
-        fetchNotes(!hasLoaded);
+                store.resetPagination();
 
-        // লেআউটে নতুন নোট সেভ হলে এই লিসেনার অটোমেটিক ফেচ করবে
+                await fetchNotes(false);
+            };
+
+        loadInitialNotes();
+
         const handleNoteSaved = () => {
+            const store =
+                useNotesStore.getState();
+
+            store.resetPagination();
+
             fetchNotes(false);
         };
 
@@ -320,11 +525,7 @@ export function useNotes() {
                 handleNoteSaved
             );
         };
-    }, [
-        accessToken,
-        hasLoaded,
-        fetchNotes,
-    ]);
+    }, [fetchNotes]);
 
     /*
      * 🔧 CHANGED:
@@ -335,14 +536,8 @@ export function useNotes() {
      * background-এ backend থেকে fresh data আনবে।
      */
     useEffect(() => {
-        if (!accessToken) {
-            setTrashLoading(false);
-            return;
-        }
-
         fetchTrashNotes(!hasTrashLoaded);
     }, [
-        accessToken,
         hasTrashLoaded,
         fetchTrashNotes,
     ]);
@@ -360,7 +555,8 @@ export function useNotes() {
              * instantly যোগ করা যায়।
              */
             const deletedNote = notes.find(
-                (note) => note.id === noteToDelete
+                (note) =>
+                    note.id === noteToDelete
             );
 
             await noteService.softDeleteNote(
@@ -374,7 +570,8 @@ export function useNotes() {
              */
             setNotes((prevNotes) =>
                 prevNotes.filter(
-                    (note) => note.id !== noteToDelete
+                    (note) =>
+                        note.id !== noteToDelete
                 )
             );
 
@@ -387,13 +584,16 @@ export function useNotes() {
              * Backend পরে fresh data দিলে সেটাও replace হবে।
              */
             if (deletedNote) {
-                setTrashNotes((prevTrashNotes) => [
-                    deletedNote,
-                    ...prevTrashNotes.filter(
-                        (note) =>
-                            note.id !== noteToDelete
-                    ),
-                ]);
+                setTrashNotes(
+                    (prevTrashNotes) => [
+                        deletedNote,
+                        ...prevTrashNotes.filter(
+                            (note) =>
+                                note.id !==
+                                noteToDelete
+                        ),
+                    ]
+                );
             }
 
             setNoteToDelete(null);
@@ -417,22 +617,26 @@ export function useNotes() {
         try {
             const restoredNote =
                 trashNotes.find(
-                    (note) => note.id === id
+                    (note) =>
+                        note.id === id
                 );
 
             await noteService.restoreNote(id);
 
-            setTrashNotes((prevTrashNotes) =>
-                prevTrashNotes.filter(
-                    (note) => note.id !== id
-                )
+            setTrashNotes(
+                (prevTrashNotes) =>
+                    prevTrashNotes.filter(
+                        (note) =>
+                            note.id !== id
+                    )
             );
 
             if (restoredNote) {
                 setNotes((prevNotes) => {
                     const alreadyExists =
                         prevNotes.some(
-                            (note) => note.id === id
+                            (note) =>
+                                note.id === id
                         );
 
                     if (alreadyExists) {
@@ -462,12 +666,16 @@ export function useNotes() {
         id: string
     ) => {
         try {
-            await noteService.permanentDeleteNote(id);
+            await noteService.permanentDeleteNote(
+                id
+            );
 
-            setTrashNotes((prevTrashNotes) =>
-                prevTrashNotes.filter(
-                    (note) => note.id !== id
-                )
+            setTrashNotes(
+                (prevTrashNotes) =>
+                    prevTrashNotes.filter(
+                        (note) =>
+                            note.id !== id
+                    )
             );
         } catch (error) {
             console.error(
@@ -505,22 +713,29 @@ export function useNotes() {
                 isPinned: !currentPinned,
             });
 
-            const updated = notes.map((note) =>
-                note.id === id
-                    ? {
-                        ...note,
-                        isPinned: !currentPinned,
-                    }
-                    : note
+            const updated = notes.map(
+                (note) =>
+                    note.id === id
+                        ? {
+                            ...note,
+                            isPinned:
+                                !currentPinned,
+                        }
+                        : note
             );
 
             // পিন স্টেট চেঞ্জ হওয়ার সাথে সাথে রি-সর্ট করা
             updated.sort((a, b) => {
-                if (a.isPinned === b.isPinned) {
+                if (
+                    a.isPinned ===
+                    b.isPinned
+                ) {
                     return 0;
                 }
 
-                return a.isPinned ? -1 : 1;
+                return a.isPinned
+                    ? -1
+                    : 1;
             });
 
             setNotes(updated);
@@ -532,19 +747,29 @@ export function useNotes() {
         }
     };
 
-    // ড্র্যাগ শুরু হলে ইডেক্স সেট করা, এখানে API call হচ্ছে না। শুধু কোন item drag হচ্ছে সেটা memory-তে রাখা হচ্ছে।
-    const handleDragStart = (index: number) => {
-        originalNotesRef.current = [...notes];
+    // ড্র্যাগ শুরু হলে ইডেক্স সেট করা, এখানে API call হচ্ছে না।
+    // শুধু কোন item drag হচ্ছে সেটা memory-তে রাখা হচ্ছে।
+    const handleDragStart = (
+        index: number
+    ) => {
+        originalNotesRef.current = [
+            ...notes,
+        ];
 
-        draggedItemIndexRef.current = index;
+        draggedItemIndexRef.current =
+            index;
 
-        notesRef.current = [...notes];
+        notesRef.current = [
+            ...notes,
+        ];
 
         setDraggedItemIndex(index);
     };
 
-    // ড্র্যাগ করার সময় নোটগুলোর লোকাল স্টেট ইনস্ট্যান্ট রিঅর্ডার করা, এটাই মূল smooth reorder function।
-    // কেন setNotes() functional form? ব্যবহার করেছি যাতে rapid dragover event-এর সময় stale state-এর সমস্যা না হয়। 
+    // ড্র্যাগ করার সময় নোটগুলোর লোকাল স্টেট ইনস্ট্যান্ট রিঅর্ডার করা,
+    // এটাই মূল smooth reorder function।
+    // কেন setNotes() functional form? ব্যবহার করেছি যাতে rapid dragover
+    // event-এর সময় stale state-এর সমস্যা না হয়।
     // Drag & drop-এর সময় browser খুব দ্রুত অনেক dragover event fire করতে পারে।
     const handleDragOver = (
         e: React.DragEvent,
@@ -588,27 +813,33 @@ export function useNotes() {
         // UI immediately update
         setNotes(updatedNotes);
 
-        draggedItemIndexRef.current = index;
+        draggedItemIndexRef.current =
+            index;
+
         setDraggedItemIndex(index);
     };
 
     // ড্র্যাগ শেষ হলে নতুন পজিশন ব্যাকএন্ডে সেভ করা
     const handleDragEnd = async () => {
         if (
-            draggedItemIndexRef.current === null
+            draggedItemIndexRef.current ===
+            null
         ) {
             return;
         }
 
         // Drag শেষ
-        draggedItemIndexRef.current = null;
+        draggedItemIndexRef.current =
+            null;
+
         setDraggedItemIndex(null);
 
         const currentNotes =
             notesRef.current;
 
         try {
-            isReorderingRef.current = true;
+            isReorderingRef.current =
+                true;
 
             const reorderItems =
                 currentNotes.map(
@@ -642,6 +873,10 @@ export function useNotes() {
     };
 
     return {
+        loadingMore,
+        hasMore,
+        searchResults,
+        searchLoading,
         notes,
         trashNotes,
         loading,
@@ -670,6 +905,8 @@ export function useNotes() {
         handleDragEnd,
         fetchNotes,
         fetchTrashNotes,
+        loadMoreNotes,
     };
-    
+
 }
+

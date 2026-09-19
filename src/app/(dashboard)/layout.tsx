@@ -17,7 +17,7 @@ export default function DashboardGroupLayout({
     children: React.ReactNode;
 }) {
     const pathname = usePathname();
-    const setAccessToken = useAuthStore((state) => state.setAccessToken);
+    // const setAccessToken = useAuthStore((state) => state.setAccessToken);
 
     // auth checking
     const [isCheckingAuth, setIsCheckingAuth] = useState(true);
@@ -36,25 +36,52 @@ export default function DashboardGroupLayout({
 
     // ড্যাশবোর্ড লেআউটে ঢোকার সাথেই সেশন ও রিফ্রেশ টোকেন চেক করা হচ্ছে
     useEffect(() => {
-        const verifySession = async () => {
-            const currentToken = useAuthStore.getState().accessToken;
-
-            if (!currentToken) {
+        const verifySession =
+            async () => {
                 try {
-                    const res: any = await api.post('/auth/refresh', {});
-                    if (res?.accessToken) {
-                        setAccessToken(res.accessToken);
+                    /*
+                     * HttpOnly cookie browser automatically
+                     * পাঠাবে।
+                     *
+                     * Frontend কখনো accessToken পড়বে না।
+                     */
+                    await api.get(
+                        '/auth/profile'
+                    );
+
+                    setIsCheckingAuth(false);
+                } catch {
+                    /*
+                     * Access token expired হলে refresh endpoint
+                     * নতুন HttpOnly cookie set করবে।
+                     */
+                    try {
+                        await api.post(
+                            '/auth/refresh',
+                            {}
+                        );
+
+                        /*
+                         * Refresh সফল হয়েছে কিনা নিশ্চিত করতে
+                         * profile আবার check করছি।
+                         */
+                        await api.get(
+                            '/auth/profile'
+                        );
+
+                        setIsCheckingAuth(
+                            false
+                        );
+                    } catch {
+                        window.location.replace(
+                            '/login?callbackUrl=/dashboard'
+                        );
                     }
-                } catch (err) {
-                    window.location.replace('/login?callbackUrl=/dashboard');
-                    return;
                 }
-            }
-            setIsCheckingAuth(false);
-        };
+            };
 
         verifySession();
-    }, [setAccessToken]);
+    }, []);
 
     // ১. মূল সেভ ফাংশন
     const handleSaveNote = async () => {
