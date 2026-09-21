@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNotebooks } from '@/hooks/useNotebooks';
 import { Notebook } from '@/services/notebook.service';
 import { Folder, Plus, Trash2, Edit3, BookOpen, Loader2, GripVertical } from 'lucide-react';
@@ -9,7 +9,11 @@ import Link from 'next/link';
 export default function NotebooksPage() {
     const {
         notebooks,
+        trashNotebooks,
         loading,
+        loadingMore,
+        hasMore,
+        loadMoreNotebooks,
         createNotebook,
         updateNotebook,
         softDeleteNotebook,
@@ -18,6 +22,52 @@ export default function NotebooksPage() {
         handleNotebookDragEnd,
         draggedNotebookIndex,
     } = useNotebooks();
+
+    const loadMoreRef = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+        /**
+         * Initial loading শেষ না হওয়া পর্যন্ত
+         * observer attach করব না।
+         *
+         * এতে sentinel প্রথম render-এ না থাকলেও
+         * পরে loading শেষ হলে effect আবার run করবে।
+         */
+        if (loading || !hasMore) {
+            return;
+        }
+
+        const element =
+            loadMoreRef.current;
+
+        if (!element) {
+            return;
+        }
+
+        const observer =
+            new IntersectionObserver(
+                (entries) => {
+                    if (
+                        entries[0]?.isIntersecting
+                    ) {
+                        loadMoreNotebooks();
+                    }
+                },
+                {
+                    rootMargin: '600px',
+                },
+            );
+
+        observer.observe(element);
+
+        return () => {
+            observer.disconnect();
+        };
+    }, [
+        loading,
+        hasMore,
+        loadMoreNotebooks,
+    ]);
 
     // মোডাল স্টেট
     const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
@@ -129,73 +179,93 @@ export default function NotebooksPage() {
                     <p className="text-xs text-zinc-400">Create your first notebook to start organizing notes.</p>
                 </div>
             ) : (
-                /* নোটবুক গ্রিড লেআউট (ড্র্যাগ এন্ড ড্রপ এনাবল্ড) */
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                    {notebooks.map((notebook, index) => (
+                <>
+                    {/*  নোটবুক গ্রিড লেআউট (ড্র্যাগ এন্ড ড্রপ এনাবল্ড) */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        {notebooks.map((notebook, index) => (
+                            <div
+                                key={notebook.id}
+                                draggable
+                                onDragStart={() => handleNotebookDragStart(index)}
+                                onDragOver={(e) => handleNotebookDragOver(e, index)}
+                                onDragEnd={handleNotebookDragEnd}
+                                className={`group relative bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between  ${draggedNotebookIndex === index ? 'opacity-40 border-dashed border-blue-500' : ''
+                                    }`}
+                            >
+                                <div className="space-y-3">
+                                    <div className="flex items-start justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <div
+                                                className="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-sm"
+                                                style={{ backgroundColor: notebook.color || '#3B82F6' }}
+                                            >
+                                                <Folder className="w-5 h-5" />
+                                            </div>
+                                            <div className="text-zinc-400 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing transition-opacity">
+                                                <GripVertical className="w-4 h-4" />
+                                            </div>
+                                        </div>
+
+                                        {/* এডিট এবং ডিলিট আইকন বাটন */}
+                                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button
+                                                onClick={() => handleOpenEditModal(notebook)}
+                                                className="text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400 p-1.5 rounded-lg transition-colors cursor-pointer"
+                                                title="Edit Notebook"
+                                            >
+                                                <Edit3 className="w-4 h-4" />
+                                            </button>
+                                            <button
+                                                onClick={() => setNotebookToDelete(notebook.id)}
+                                                className="text-zinc-400 hover:text-red-600 dark:hover:text-red-400 p-1.5 rounded-lg transition-colors cursor-pointer"
+                                                title="Delete Notebook"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <h3 className="font-semibold text-zinc-800 dark:text-zinc-100 text-base">
+                                            {notebook.title}
+                                        </h3>
+                                        <p className="text-zinc-500 dark:text-zinc-400 text-xs line-clamp-2 mt-1">
+                                            {notebook.description || 'No description provided.'}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center justify-between pt-4 mt-4 border-t border-zinc-100 dark:border-zinc-800/60 text-xs text-zinc-500">
+                                    <span>{notebook._count?.notes || 0} notes</span>
+                                    <Link
+                                        href={`/dashboard/notebooks/${notebook.id}`}
+                                        className="text-blue-600 dark:text-blue-400 font-medium hover:underline flex items-center gap-1"
+                                    >
+                                        Open →
+                                    </Link>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* cursor scrool */}
+                    {hasMore && (
                         <div
-                            key={notebook.id}
-                            draggable
-                            onDragStart={() => handleNotebookDragStart(index)}
-                            onDragOver={(e) => handleNotebookDragOver(e, index)}
-                            onDragEnd={handleNotebookDragEnd}
-                            className={`group relative bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between  ${draggedNotebookIndex === index ? 'opacity-40 border-dashed border-blue-500' : ''
-                                }`}
+                            ref={loadMoreRef}
+                            className="flex justify-center py-8"
                         >
-                            <div className="space-y-3">
-                                <div className="flex items-start justify-between">
-                                    <div className="flex items-center gap-2">
-                                        <div
-                                            className="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-sm"
-                                            style={{ backgroundColor: notebook.color || '#3B82F6' }}
-                                        >
-                                            <Folder className="w-5 h-5" />
-                                        </div>
-                                        <div className="text-zinc-400 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing transition-opacity">
-                                            <GripVertical className="w-4 h-4" />
-                                        </div>
-                                    </div>
-
-                                    {/* এডিট এবং ডিলিট আইকন বাটন */}
-                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button
-                                            onClick={() => handleOpenEditModal(notebook)}
-                                            className="text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400 p-1.5 rounded-lg transition-colors cursor-pointer"
-                                            title="Edit Notebook"
-                                        >
-                                            <Edit3 className="w-4 h-4" />
-                                        </button>
-                                        <button
-                                            onClick={() => setNotebookToDelete(notebook.id)}
-                                            className="text-zinc-400 hover:text-red-600 dark:hover:text-red-400 p-1.5 rounded-lg transition-colors cursor-pointer"
-                                            title="Delete Notebook"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
-                                    </div>
+                            {loadingMore && (
+                                <div className="flex items-center gap-2 text-sm text-zinc-400">
+                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                    Loading more notebooks...
                                 </div>
-
-                                <div>
-                                    <h3 className="font-semibold text-zinc-800 dark:text-zinc-100 text-base">
-                                        {notebook.title}
-                                    </h3>
-                                    <p className="text-zinc-500 dark:text-zinc-400 text-xs line-clamp-2 mt-1">
-                                        {notebook.description || 'No description provided.'}
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div className="flex items-center justify-between pt-4 mt-4 border-t border-zinc-100 dark:border-zinc-800/60 text-xs text-zinc-500">
-                                <span>{notebook._count?.notes || 0} notes</span>
-                                <Link
-                                    href={`/dashboard/notebooks/${notebook.id}`}
-                                    className="text-blue-600 dark:text-blue-400 font-medium hover:underline flex items-center gap-1"
-                                >
-                                    Open →
-                                </Link>
-                            </div>
+                            )}
                         </div>
-                    ))}
-                </div>
+                    )}
+
+
+                </>
+
             )}
 
             {/* নোটবুক তৈরি বা এডিট করার পপআপ মোডাল (Modal) */}

@@ -24,10 +24,45 @@ export interface CreateNotebookDto {
 
 export interface UpdateNotebookDto extends Partial<CreateNotebookDto> { }
 
+export interface NotebookPageResponse {
+    data: Notebook[];
+    nextCursor: string | null;
+    hasMore: boolean;
+}
+
 export const notebookService = {
-    // ইউজারের সব নোটবুক নিয়ে আসা
-    async getNotebooks(): Promise<Notebook[]> {
-        return await api.get('/notebooks');
+
+    /** user's all notebook
+     * Active notebooks
+     * 20 at a time
+     */
+    async getNotebooks(
+        limit = 20,
+        cursor?: string,
+        search?: string,
+    ): Promise<NotebookPageResponse> {
+        const params =
+            new URLSearchParams();
+
+        params.set(
+            'limit',
+            String(limit),
+        );
+
+        if (cursor) {
+            params.set('cursor', cursor);
+        }
+
+        if (search?.trim()) {
+            params.set(
+                'search',
+                search.trim(),
+            );
+        }
+
+        return await api.get(
+            `/notebooks?${params.toString()}`,
+        ) as unknown as NotebookPageResponse;
     },
 
     // নির্দিষ্ট একটি নোটবুকের ডিটেইলস আনা
@@ -70,16 +105,22 @@ export const notebookService = {
         return await api.delete(`/notebooks/${id}`);
     },
 
-    // ড্র্যাগ এন্ড ড্রপের পর notebook পজিশন আপডেট করা
+    /**
+     * Pagination-safe reorder
+     */
     async reorderNotebooks(
-        items: {
-            id: string;
-            position: number;
-        }[],
+        id: string,
+        beforeId: string | null,
+        afterId: string | null,
     ) {
-        return await api.patch('/notebooks/reorder', {
-            items,
-        });
-    }
+        return await api.patch(
+            '/notebooks/reorder',
+            {
+                id,
+                beforeId,
+                afterId,
+            },
+        );
+    },
 
 };

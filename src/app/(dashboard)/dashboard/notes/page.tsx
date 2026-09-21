@@ -145,7 +145,7 @@ function NotesContent() {
     /*
      * Search loading-এর সময় spinner দেখাবে।
      */
-    if ( searchQuery && searchLoading ) {
+    if (searchQuery && searchLoading) {
         return (
             <div className="w-full space-y-6 relative">
                 <div className="flex items-center justify-between px-2">
@@ -210,7 +210,7 @@ function NotesContent() {
             ) : (
                 <>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                        
+
                         {displayedNotes.map(
                             (note, index) => {
                                 const rawColor =
@@ -419,6 +419,7 @@ function NotesContent() {
                                 )}
                             </div>
                         )}
+
                 </>
             )}
 
