@@ -5,7 +5,6 @@ import { useNotesStore, Note } from '@/store/useNotesStore';
 export function useNotes(searchQuery = '', notebookId?: string,) {
 
     /*
-     * 🔧 CHANGED:
      *
      * Notes আর hook-এর local state-এ থাকবে না।
      * Zustand store থেকে নেওয়া হবে যাতে route change হলেও
@@ -33,7 +32,6 @@ export function useNotes(searchQuery = '', notebookId?: string,) {
     );
 
     /*
-     * 🔧 CHANGED:
      *
      * accessToken এখন HttpOnly cookie-তে থাকে।
      * তাই frontend থেকে accessToken পড়ার প্রয়োজন নেই।
@@ -98,7 +96,6 @@ export function useNotes(searchQuery = '', notebookId?: string,) {
         useRef<NodeJS.Timeout | null>(null);
 
     /*
-     * 🔧 CHANGED:
      *
      * Zustand store থেকে notes পরিবর্তন হলে local ref-টাও
      * sync করে রাখা হচ্ছে।
@@ -454,7 +451,6 @@ export function useNotes(searchQuery = '', notebookId?: string,) {
     const fetchTrashNotes = useCallback(
         async (isInitial = false) => {
             /*
-             * 🔧 CHANGED:
              *
              * accessToken check removed.
              *
@@ -464,7 +460,6 @@ export function useNotes(searchQuery = '', notebookId?: string,) {
 
             try {
                 /*
-                 * 🔧 CHANGED:
                  *
                  * Trash cache আগে থেকেই থাকলে route change-এর সময়
                  * নতুন spinner দেখানো হবে না।
@@ -487,7 +482,6 @@ export function useNotes(searchQuery = '', notebookId?: string,) {
                         [];
 
                 /*
-                 * 🔧 CHANGED:
                  *
                  * Trash data Zustand store-এ রাখা হচ্ছে।
                  */
@@ -551,7 +545,6 @@ export function useNotes(searchQuery = '', notebookId?: string,) {
     ]);
 
     /*
-     * 🔧 CHANGED:
      *
      * Trash page-এ গেলে trash data fetch হবে।
      *
@@ -571,7 +564,6 @@ export function useNotes(searchQuery = '', notebookId?: string,) {
 
         try {
             /*
-             * 🔧 CHANGED:
              *
              * Delete করার আগে note object বের করে রাখছি,
              * যাতে backend success হওয়ার পরে সেটাকে Trash cache-এ
@@ -587,7 +579,6 @@ export function useNotes(searchQuery = '', notebookId?: string,) {
             );
 
             /*
-             * 🔧 CHANGED:
              *
              * Active notes cache থেকে note remove করা হচ্ছে।
              */
@@ -599,7 +590,6 @@ export function useNotes(searchQuery = '', notebookId?: string,) {
             );
 
             /*
-             * 🔧 CHANGED:
              *
              * Backend delete successful হওয়ার পর একই note
              * Trash cache-এ instantly যোগ করা হচ্ছে।
@@ -629,7 +619,6 @@ export function useNotes(searchQuery = '', notebookId?: string,) {
     };
 
     /*
-     * 🔧 CHANGED:
      *
      * Trash থেকে note restore করার function।
      *
@@ -681,7 +670,6 @@ export function useNotes(searchQuery = '', notebookId?: string,) {
     };
 
     /*
-     * 🔧 CHANGED:
      *
      * Trash থেকে permanently delete করার function।
      */
@@ -709,7 +697,6 @@ export function useNotes(searchQuery = '', notebookId?: string,) {
     };
 
     /*
-     * 🔧 CHANGED:
      *
      * Notes Trash সম্পূর্ণ empty করার function।
      */

@@ -40,14 +40,10 @@ export default function DashboardGroupLayout({
             async () => {
                 try {
                     /*
-                     * HttpOnly cookie browser automatically
-                     * পাঠাবে।
-                     *
+                     * HttpOnly cookie browser automatically পাঠাবে।
                      * Frontend কখনো accessToken পড়বে না।
                      */
-                    await api.get(
-                        '/auth/profile'
-                    );
+                    await api.get('/auth/profile');
 
                     setIsCheckingAuth(false);
                 } catch {
@@ -56,22 +52,15 @@ export default function DashboardGroupLayout({
                      * নতুন HttpOnly cookie set করবে।
                      */
                     try {
-                        await api.post(
-                            '/auth/refresh',
-                            {}
-                        );
+                        await api.post('/auth/refresh', {});
 
                         /*
                          * Refresh সফল হয়েছে কিনা নিশ্চিত করতে
                          * profile আবার check করছি।
                          */
-                        await api.get(
-                            '/auth/profile'
-                        );
+                        await api.get('/auth/profile');
 
-                        setIsCheckingAuth(
-                            false
-                        );
+                        setIsCheckingAuth(false);
                     } catch {
                         window.location.replace(
                             '/login?callbackUrl=/dashboard'
@@ -80,7 +69,39 @@ export default function DashboardGroupLayout({
                 }
             };
 
+        /*
+        * Normal dashboard load।
+        */
+
         verifySession();
+
+        /*
+     * Browser Back / Forward করলে browser অনেক সময়
+     * bfcache থেকে পুরোনো page restore করে।
+     *
+     * সেই ক্ষেত্রে আবার পুরো page reload করবো।
+     *
+     * তারপর dashboard-এর auth check আবার চলবে।
+     * Logout করা থাকলে /login-এ চলে যাবে।
+     */
+        const handlePageShow = (event: PageTransitionEvent) => {
+            if (event.persisted) {
+                window.location.reload();
+            }
+        };
+
+        window.addEventListener(
+            'pageshow',
+            handlePageShow
+        );
+
+        return () => {
+            window.removeEventListener(
+                'pageshow',
+                handlePageShow
+            );
+        };
+
     }, []);
 
     // ১. মূল সেভ ফাংশন

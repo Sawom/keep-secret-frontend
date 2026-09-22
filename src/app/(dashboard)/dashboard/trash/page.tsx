@@ -8,13 +8,13 @@ import { useTrash } from './../../../../hooks/useTrash';
 
 function TrashContent() {
     const {
-    notes: trashNotes,
-    notebooks: trashNotebooks,
-    loading,
-    emptyTrash,
-    removeNote,
-    removeNotebook,
-} = useTrash();
+        notes: trashNotes,
+        notebooks: trashNotebooks,
+        loading,
+        emptyTrash,
+        removeNote,
+        removeNotebook,
+    } = useTrash();
 
     const [noteToDeleteForever, setNoteToDeleteForever] =
         useState<string | null>(null);
@@ -26,7 +26,7 @@ function TrashContent() {
         useState(false);
 
     /*
-     * 🔧 CHANGED:
+     *  :
      *
      * Note restore করার function।
      *
@@ -68,7 +68,7 @@ function TrashContent() {
     };
 
     /*
-     * 🔧 CHANGED:
+     *  :
      *
      * Note permanently delete করার function।
      */

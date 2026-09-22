@@ -11,14 +11,14 @@ import { useNotebookStore } from '@/store/useNotebookStore';
 export default function LogoutButton() {
     const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-    // 🔧 CHANGED: Auth এবং Notes/Notebook Zustand cache clear করার জন্য store actions নেওয়া হচ্ছে।
+    //  : Auth এবং Notes/Notebook Zustand cache clear করার জন্য store actions নেওয়া হচ্ছে।
     const logoutAuth = useAuthStore((state) => state.logout);
     const clearNotes = useNotesStore((state) => state.clearNotes);
     const clearNotebooks = useNotebookStore(
         (state) => state.clearNotebooks
     );
 
-    // 🔧 CHANGED: Logout এখন server session + client memory cache দুটোই clear করবে।
+    //  : Logout এখন server session + client memory cache দুটোই clear করবে।
     const handleLogout = async () => {
         if (isLoggingOut) return;
 
@@ -31,7 +31,7 @@ export default function LogoutButton() {
             console.error('Logout failed:', error);
         } finally {
             /*
-             * 🔧 CHANGED:
+             *  :
              *
              * Backend logout success হোক বা fail হোক,
              * browser-এর in-memory sensitive data clear করা হবে।
@@ -47,7 +47,7 @@ export default function LogoutButton() {
             setIsLoggingOut(false);
 
             /*
-             * 🔧 CHANGED:
+             *  :
              *
              * window.location.href ব্যবহার করলে নতুন document load হবে।
              * এতে আগের protected page-এর React state/UI memory-ও

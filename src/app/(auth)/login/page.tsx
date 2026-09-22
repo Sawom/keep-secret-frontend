@@ -40,7 +40,7 @@ function LoginForm() {
                 });
 
             /*
-             * 🔧 CHANGED:
+             * 
              *
              * Access token এখন HttpOnly cookie।
              * তাই frontend token save করবে না।

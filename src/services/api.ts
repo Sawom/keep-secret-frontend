@@ -11,8 +11,6 @@ interface RetryableRequestConfig
 }
 
 /*
- * 🔧 CHANGED:
- *
  * Access token আর frontend থেকে manually read করা হবে না।
  *
  * Access token এবং refresh token দুটোই HttpOnly cookie।
@@ -29,8 +27,6 @@ export const api = axios.create({
 });
 
 /*
- * 🔧 CHANGED:
- *
  * Access token HttpOnly হওয়ায় এখানে আর
  * Authorization header manually সেট করা হবে না।
  *
@@ -44,8 +40,6 @@ api.interceptors.request.use(
 );
 
 /*
- * 🔧 CHANGED:
- *
  * একই সময়ে একাধিক API request 401 করলে
  * একাধিক refresh request না পাঠিয়ে
  * একটি refresh request-এর Promise সবাই share করবে।
@@ -80,8 +74,6 @@ const refreshAccessToken = async (): Promise<void> => {
 };
 
 /*
- * 🔧 CHANGED:
- *
  * 401 হলে silently access token refresh করবে।
  *
  * Refresh successful হলে original request আবার চালাবে।
@@ -96,6 +88,9 @@ api.interceptors.response.use(
         const originalRequest =
             error.config as RetryableRequestConfig | undefined;
 
+        /*
+         * 401 ছাড়া অন্য error হলে এখানে কিছু করার দরকার নেই।
+         */
         if (
             error.response?.status !== 401 ||
             !originalRequest ||
@@ -105,28 +100,52 @@ api.interceptors.response.use(
         }
 
         /*
-         * Original request-কে একবারের বেশি retry করা যাবে না।
+         * Login / refresh / logout request নিজেরাই auth-related।
+         * এগুলোতে 401 হলে আবার refresh করার চেষ্টা করা যাবে না।
          */
+        const requestUrl = originalRequest.url || '';
+
+        if (
+            requestUrl.includes('/auth/login') ||
+            requestUrl.includes('/auth/refresh') ||
+            requestUrl.includes('/auth/logout')
+        ) {
+            return Promise.reject(error);
+        }
+
+        /*
+         * Homepage public page।
+         *
+         * Homepage-এ /auth/profile 401 হওয়া normal।
+         * তাই homepage থেকে user-কে login page-এ redirect করা যাবে না।
+         */
+        const isHomepage =
+            typeof window !== 'undefined' &&
+            window.location.pathname === '/';
+
         originalRequest._retry = true;
 
         try {
             /*
-             * Access token expired হলে refresh cookie ব্যবহার করে
-             * নতুন access token cookie সেট করা হবে।
+             * Access token expired হলে refresh করার চেষ্টা।
              */
             await refreshAccessToken();
 
             /*
-             * নতুন accessToken cookie browser automatically
-             * পরবর্তী request-এ পাঠাবে।
+             * Refresh সফল হলে original request আবার চালানো হবে।
              */
             return api(originalRequest);
         } catch (refreshError) {
             /*
-             * Refresh token-ও invalid/expired হলে
-             * local auth state clear করা হবে।
-             *
-             * Sensitive note cache-ও clear করা হবে।
+             * Homepage-এ session না থাকাটা normal।
+             * তাই এখানে redirect করা যাবে না।
+             */
+            if (isHomepage) {
+                return Promise.reject(refreshError);
+            }
+
+            /*
+             * Protected area-তে refresh token invalid/expired।
              */
             if (typeof window !== 'undefined') {
                 const { useAuthStore } =
