@@ -6,7 +6,6 @@ import { usePathname } from 'next/navigation';
 import { Trash2, Edit3, Archive, Menu, Loader2, Pin, Settings, User, BookOpen, Bell, Image as ImageIcon, CheckSquare, Palette } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 import LogoutButton from '@/components/LogoutButton';
-import { useAuthStore } from '@/store/useAuthStore';
 import { api } from '@/services/api';
 import { noteService } from '@/services/note.service';
 import SearchBar from '@/components/SearchBar';
@@ -166,9 +165,9 @@ export default function DashboardGroupLayout({
     }
 
     const navItems = [
+        { name: 'Profile', href: '/dashboard', icon: User },
         { name: 'Notes', href: '/dashboard/notes', icon: Pin },
         { name: 'Notebooks', href: '/dashboard/notebooks', icon: BookOpen },
-        { name: 'Reminders', href: '/dashboard/reminders', icon: Bell },
         { name: 'Trash', href: '/dashboard/trash', icon: Trash2 },
     ];
 
@@ -196,13 +195,13 @@ export default function DashboardGroupLayout({
 
                 <div className="flex items-center gap-2">
                     <SearchBar />
-                    <Link
-                        href="/dashboard/profile"
+                    {/* <Link
+                        href="/dashboard"
                         className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-600 dark:text-zinc-300"
                         title="Profile"
                     >
                         <User className="w-5 h-5" />
-                    </Link>
+                    </Link> */}
                     <Link
                         href="/dashboard/settings"
                         className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-600 dark:text-zinc-300"
@@ -343,3 +342,39 @@ export default function DashboardGroupLayout({
         </div>
     );
 }
+
+
+/*
+Logout → Back কীভাবে কাজ করবে
+user এখানে: /dashboard/notebooks/123 তারপর Logout:
+
+/dashboard/notebooks/123
+       ↓
+     Logout
+       ↓
+     /login
+
+তারপর user browser-এর Back চাপল:
+/login
+ ↓
+Back
+ ↓
+/dashboard/notebooks/123
+ ↓
+pageshow
+ ↓
+reload
+ ↓
+/auth/profile
+ ↓
+401
+ ↓
+refresh
+ ↓
+401
+ ↓
+/login?callbackUrl=/dashboard
+
+তাই পুরোনো notebook/dashboard আর usable অবস্থায় ফিরে আসবে না।
+
+*/

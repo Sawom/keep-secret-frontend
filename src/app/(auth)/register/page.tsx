@@ -153,7 +153,7 @@ export default function RegisterPage() {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full mt-2 flex items-center justify-center gap-2 py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors text-sm disabled:opacity-50"
+                        className="w-full mt-2 flex items-center cursor-pointer justify-center gap-2 py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors text-sm disabled:opacity-50"
                     >
                         {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Sign Up <ArrowRight className="w-4 h-4" /></>}
                     </button>
@@ -171,7 +171,7 @@ export default function RegisterPage() {
                     <button
                         type="button"
                         onClick={handleGoogleLogin}
-                        className="w-full mt-2 flex items-center justify-center gap-2 py-2.5 px-4 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-750 text-zinc-700 dark:text-zinc-200 font-medium rounded-lg transition-colors text-sm"
+                        className="w-full mt-2 flex items-center cursor-pointer justify-center gap-2 py-2.5 px-4 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-750 text-zinc-700 dark:text-zinc-200 font-medium rounded-lg transition-colors text-sm"
                     >
                         {/* Google Official Multi-Color SVG Icon */}
                         <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -200,8 +200,8 @@ export default function RegisterPage() {
                     Already have an account? <Link href="/login" className="text-indigo-600 dark:text-indigo-400 font-medium hover:underline">Sign In</Link>
                 </p>
 
-                 <p className="text-center text-xs text-zinc-500 dark:text-zinc-400 mt-6">
-                   Back to <Link href="/" className="text-indigo-600 dark:text-indigo-400 font-medium hover:underline">Homepage</Link>
+                <p className="text-center text-xs text-zinc-500 dark:text-zinc-400 mt-6">
+                    Back to <Link href="/" className="text-indigo-600 dark:text-indigo-400 font-medium hover:underline">Homepage</Link>
                 </p>
             </div>
         </div>
