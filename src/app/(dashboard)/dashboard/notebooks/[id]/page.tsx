@@ -26,7 +26,6 @@ import {
 import { useNotebooks } from '@/hooks/useNotebooks';
 import { useNotes } from '@/hooks/useNotes';
 import { noteService } from '@/services/note.service';
-import type { Note } from '@/store/useNotesStore';
 import type { Notebook } from '@/services/notebook.service';
 
 export default function SingleNotebookPage({
@@ -402,8 +401,7 @@ export default function SingleNotebookPage({
             </div>
 
             {/* =========================
-                TAKE A NOTE
-                Same UI as dashboard layout
+                TAKE A NOTE , Same UI as dashboard layout
             ========================= */}
 
             <div className="w-full max-w-2xl mx-auto">
@@ -449,7 +447,7 @@ export default function SingleNotebookPage({
                             />
 
                             <textarea
-                                placeholder="Take a note..."
+                                placeholder="Write here..."
                                 value={
                                     noteBody
                                 }
@@ -765,9 +763,7 @@ export default function SingleNotebookPage({
 
                     </div>
 
-                    {/* =========================
-                        CURSOR LOAD MORE
-                    ========================= */}
+                    {/* CURSOR LOAD MORE pagination */}
 
                     {hasMore && (
                         <div
@@ -788,10 +784,7 @@ export default function SingleNotebookPage({
                 </>
             )}
 
-            {/* =========================
-                EDIT MODAL
-                Same Notes UI
-            ========================= */}
+            {/*  EDIT MODAL  */}
 
             {editingNoteId &&
                 (() => {
@@ -890,7 +883,7 @@ export default function SingleNotebookPage({
                                 />
 
                                 <textarea
-                                    placeholder="Take a note..."
+                                    placeholder="Add a chapter..."
                                     value={
                                         editBody
                                     }
@@ -986,9 +979,7 @@ export default function SingleNotebookPage({
                     );
                 })()}
 
-            {/* =========================
-                DELETE MODAL
-            ========================= */}
+            {/* DELETE MODAL */}
 
             {noteToDelete && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50">
