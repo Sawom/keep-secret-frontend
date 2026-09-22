@@ -168,12 +168,19 @@ export const noteService = {
             id: string;
             position: number;
         }[],
+        notebookId?: string,
     ) {
         return await api.patch(
             '/notes/reorder',
             {
                 items,
+                ...(notebookId
+                    ? {
+                        notebookId,
+                    }
+                    : {}),
             }
         );
-    },
+    }
+
 };

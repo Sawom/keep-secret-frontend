@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { noteService } from '@/services/note.service';
 import { useNotesStore, Note } from '@/store/useNotesStore';
 
-export function useNotes(searchQuery = '') {
+export function useNotes(searchQuery = '', notebookId?: string,) {
 
     /*
      * 🔧 CHANGED:
@@ -209,86 +209,102 @@ export function useNotes(searchQuery = '') {
     // ১. নোট ফেচ করা
     const fetchNotes = useCallback(
         async (loadMore = false) => {
-            const store = useNotesStore.getState();
+            const store =
+                useNotesStore.getState();
 
-            /*
-             * Initial fetch হলে loading দেখাবে।
-             */
-            if (!loadMore && !store.hasLoaded) {
+            if (
+                !loadMore &&
+                !store.hasLoaded
+            ) {
                 setLoading(true);
             }
 
-            /*
-             * আর page না থাকলে request যাবে না।
-             */
             if (
                 loadMore &&
-                (!store.hasMore || !store.nextCursor)
+                (
+                    !store.hasMore ||
+                    !store.nextCursor
+                )
             ) {
                 return;
             }
 
             try {
-                const cursor = loadMore
-                    ? store.nextCursor
-                    : undefined;
+                const cursor =
+                    loadMore
+                        ? store.nextCursor
+                        : undefined;
 
-                const response = await noteService.getNotes(
-                    undefined,
-                    20,
-                    cursor || undefined,
-                );
+                const response =
+                    await noteService.getNotes(
+                        notebookId,
+                        20,
+                        cursor || undefined,
+                    );
 
                 /*
-                 * noteService থেকে pagination object পাওয়া যাচ্ছে:
-                 *
-                 * {
-                 *   data: Note[],
-                 *   nextCursor: string | null,
-                 *   hasMore: boolean
-                 * }
-                 */
-                const pageData: Note[] = response.data ?? [];
+             * noteService থেকে pagination object পাওয়া যাচ্ছে:
+             *
+             * {
+             *   data: Note[],
+             *   nextCursor: string | null,
+             *   hasMore: boolean
+             * }
+             */
 
-                setNotes((previous: Note[]) => {
-                    /*
+                const pageData: Note[] =
+                    response.data ?? [];
+
+                setNotes(
+                    (previous: Note[]) => {
+
+                        /*
                      * First page হলে replace।
                      */
-                    if (!loadMore) {
-                        return pageData;
-                    }
 
-                    /*
+                        if (!loadMore) {
+                            return pageData;
+                        }
+
+                        /*
                      * Next page হলে duplicate আটকানো।
                      */
-                    const existingIds = new Set(
-                        previous.map((note: Note) => note.id),
-                    );
 
-                    const newNotes = pageData.filter(
-                        (note: Note) =>
-                            !existingIds.has(note.id),
-                    );
+                        const existingIds =
+                            new Set(
+                                previous.map(
+                                    (note) =>
+                                        note.id
+                                )
+                            );
 
-                    return [
-                        ...previous,
-                        ...newNotes,
-                    ];
-                });
+                        const newNotes =
+                            pageData.filter(
+                                (note) =>
+                                    !existingIds.has(
+                                        note.id
+                                    )
+                            );
 
-                /*
-                 * Pagination state update।
-                 */
+                        return [
+                            ...previous,
+                            ...newNotes,
+                        ];
+                    }
+                );
+
                 useNotesStore
                     .getState()
                     .setPagination(
-                        response.nextCursor || null,
-                        response.hasMore ?? false,
+                        response.nextCursor ??
+                        null,
+                        response.hasMore ??
+                        false,
                     );
             } catch (error) {
                 console.error(
                     'Failed to fetch notes:',
-                    error,
+                    error
                 );
             } finally {
                 if (!loadMore) {
@@ -296,7 +312,10 @@ export function useNotes(searchQuery = '') {
                 }
             }
         },
-        [setNotes],
+        [
+            notebookId,
+            setNotes,
+        ],
     );
 
     /*
@@ -341,9 +360,6 @@ export function useNotes(searchQuery = '') {
             }
         }, [fetchNotes]);
 
-
-    // const searchRequestIdRef =
-    //     useRef(0);
 
     /*
   * Search API।
@@ -500,19 +516,24 @@ export function useNotes(searchQuery = '') {
 
                 store.resetPagination();
 
+                /*
+                 * Notebook ID থাকলে
+                 * শুধু ওই notebook-এর notes fetch হবে।
+                 */
                 await fetchNotes(false);
             };
 
         loadInitialNotes();
 
-        const handleNoteSaved = () => {
-            const store =
-                useNotesStore.getState();
+        const handleNoteSaved =
+            () => {
+                const store =
+                    useNotesStore.getState();
 
-            store.resetPagination();
+                store.resetPagination();
 
-            fetchNotes(false);
-        };
+                fetchNotes(false);
+            };
 
         window.addEventListener(
             'note-saved',
@@ -525,7 +546,9 @@ export function useNotes(searchQuery = '') {
                 handleNoteSaved
             );
         };
-    }, [fetchNotes]);
+    }, [
+        fetchNotes,
+    ]);
 
     /*
      * 🔧 CHANGED:
@@ -820,57 +843,51 @@ export function useNotes(searchQuery = '') {
     };
 
     // ড্র্যাগ শেষ হলে নতুন পজিশন ব্যাকএন্ডে সেভ করা
-    const handleDragEnd = async () => {
-        if (
-            draggedItemIndexRef.current ===
-            null
-        ) {
-            return;
-        }
+    const handleDragEnd =
+        async () => {
+            if (draggedItemIndexRef.current === null) {
+                return;
+            }
 
-        // Drag শেষ
-        draggedItemIndexRef.current =
-            null;
+            draggedItemIndexRef.current = null;
 
-        setDraggedItemIndex(null);
+            setDraggedItemIndex(null);
 
-        const currentNotes =
-            notesRef.current;
+            const currentNotes = notesRef.current;
 
-        try {
-            isReorderingRef.current =
-                true;
+            try {
+                isReorderingRef.current = true;
 
-            const reorderItems =
-                currentNotes.map(
-                    (note, index) => ({
+                const reorderItems = currentNotes.map(
+                    (
+                        note, index
+                    ) => ({
                         id: note.id,
                         position: index,
                     })
                 );
 
-            await noteService.reorderNotes(
-                reorderItems
-            );
-        } catch (error) {
-            console.error(
-                'Failed to save note order:',
-                error
-            );
+                await noteService.reorderNotes(
+                    reorderItems,
+                    notebookId,
+                );
+            } catch (error) {
+                console.error(
+                    'Failed to save note order:',
+                    error
+                );
 
-            // Backend save fail করলে আগের order restore
-            const originalNotes =
-                originalNotesRef.current;
+                const originalNotes = originalNotesRef.current;
 
-            notesRef.current =
-                originalNotes;
+                notesRef.current = originalNotes;
 
-            setNotes(originalNotes);
-        } finally {
-            isReorderingRef.current =
-                false;
-        }
-    };
+                setNotes(
+                    originalNotes
+                );
+            } finally {
+                isReorderingRef.current = false;
+            }
+        };
 
     return {
         loadingMore,
