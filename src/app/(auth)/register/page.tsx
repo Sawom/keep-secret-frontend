@@ -171,7 +171,7 @@ export default function RegisterPage() {
                     <button
                         type="button"
                         onClick={handleGoogleLogin}
-                        className="w-full mt-2 flex items-center cursor-pointer justify-center gap-2 py-2.5 px-4 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-750 text-zinc-700 dark:text-zinc-200 font-medium rounded-lg transition-colors text-sm"
+                        className="w-full mt-2 flex items-center cursor-pointer justify-center gap-2 py-2.5 px-4 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-900 text-zinc-700 dark:text-zinc-200 font-medium rounded-lg transition-colors text-sm"
                     >
                         {/* Google Official Multi-Color SVG Icon */}
                         <svg className="w-5 h-5" viewBox="0 0 24 24">
