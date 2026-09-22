@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { authService } from '@/services/auth.service';
-import { User, Mail, Lock, ArrowRight, Loader2 } from 'lucide-react';
+import { User, Mail, Lock, ArrowRight, Loader2, Eye, EyeOff } from 'lucide-react';
 
 export default function RegisterPage() {
     const [name, setName] = useState('');
@@ -13,7 +13,8 @@ export default function RegisterPage() {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const router = useRouter();
 
     const handleRegister = async (e: React.FormEvent) => {
@@ -91,33 +92,61 @@ export default function RegisterPage() {
                         </div>
                     </div>
 
+                    {/* pass */}
                     <div>
                         <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">Password (Min 6 chars)</label>
                         <div className="relative">
                             <Lock className="absolute left-3 top-3 w-5 h-5 text-zinc-400" />
                             <input
-                                type="password"
+                                type={showPassword ? "text" : "password"}
                                 required
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 placeholder="••••••••"
                                 className="w-full pl-10 pr-4 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
                             />
+
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3 top-3 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 focus:outline-none cursor-pointer"
+                            >
+                                {showPassword ? (
+                                    <EyeOff className="w-5 h-5" />
+                                ) : (
+                                    <Eye className="w-5 h-5" />
+                                )}
+                            </button>
+
                         </div>
                     </div>
 
+                    {/* confirm pass */}
                     <div>
                         <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">Confirm Password</label>
                         <div className="relative">
                             <Lock className="absolute left-3 top-3 w-5 h-5 text-zinc-400" />
                             <input
-                                type="password"
+                                type={showConfirmPassword ? "text" : "password"}
                                 required
                                 value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)}
                                 placeholder="••••••••"
                                 className="w-full pl-10 pr-4 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
                             />
+
+                            <button
+                                type="button"
+                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                className="absolute right-3 top-3 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 focus:outline-none cursor-pointer"
+                            >
+                                {showConfirmPassword ? (
+                                    <EyeOff className="w-5 h-5" />
+                                ) : (
+                                    <Eye className="w-5 h-5" />
+                                )}
+                            </button>
+
                         </div>
                     </div>
 
@@ -169,6 +198,10 @@ export default function RegisterPage() {
 
                 <p className="text-center text-xs text-zinc-500 dark:text-zinc-400 mt-6">
                     Already have an account? <Link href="/login" className="text-indigo-600 dark:text-indigo-400 font-medium hover:underline">Sign In</Link>
+                </p>
+
+                 <p className="text-center text-xs text-zinc-500 dark:text-zinc-400 mt-6">
+                   Back to <Link href="/" className="text-indigo-600 dark:text-indigo-400 font-medium hover:underline">Homepage</Link>
                 </p>
             </div>
         </div>
