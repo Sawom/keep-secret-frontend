@@ -652,15 +652,11 @@ export default function SingleNotebookPage({
                                         <div className="space-y-2 pr-12">
 
                                             <h3 className="font-semibold truncate text-zinc-800 dark:text-zinc-100 text-base">
-                                                {
-                                                    note.title
-                                                }
+                                                {note.title}
                                             </h3>
 
                                             <p className="text-zinc-600 dark:text-zinc-300 text-sm whitespace-pre-wrap line-clamp-6">
-                                                {
-                                                    note.content
-                                                }
+                                                {note.content}
                                             </p>
 
                                         </div>

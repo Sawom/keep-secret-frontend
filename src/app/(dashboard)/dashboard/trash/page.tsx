@@ -26,8 +26,6 @@ function TrashContent() {
         useState(false);
 
     /*
-     *  :
-     *
      * Note restore করার function।
      *
      * Restore সফল হলে useTrash store থেকে
@@ -68,7 +66,7 @@ function TrashContent() {
     };
 
     /*
-     *  :
+      
      *
      * Note permanently delete করার function।
      */
@@ -176,18 +174,14 @@ function TrashContent() {
                     <button
                         onClick={handleEmptyTrash}
                         disabled={emptyingTrash}
-                        className="flex items-center gap-1.5 text-xs font-medium text-red-600 hover:text-red-700 bg-red-50 dark:bg-red-950/40 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex items-center cursor-pointer gap-1.5 text-xs font-medium text-red-600 hover:text-red-700 bg-red-50 dark:bg-red-950/40 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         title="Empty Trash"
                     >
                         {emptyingTrash ? (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            <Loader2 className="w-4 h-4 animate-spin" />
                         ) : (
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className="w-4 h-4" />
                         )}
-
-                        {emptyingTrash
-                            ? 'Emptying...'
-                            : 'Empty Trash'}
                     </button>
                 )}
             </div>
@@ -207,9 +201,7 @@ function TrashContent() {
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
 
-                    {/* =========================
-                        TRASHED NOTES
-                    ========================= */}
+                    {/* TRASHED NOTES */}
 
                     {trashNotes.map((note) => {
                         const rawColor =
@@ -237,7 +229,7 @@ function TrashContent() {
                                     }`}
                             >
                                 <div className="space-y-2">
-                                    <h3 className="font-semibold text-zinc-800 dark:text-zinc-100 text-base">
+                                    <h3 className="font-semibold truncate text-zinc-800 dark:text-zinc-100 text-base">
                                         {note.title}
                                     </h3>
 
@@ -253,7 +245,8 @@ function TrashContent() {
                                                 note.id
                                             )
                                         }
-                                        className="flex items-center gap-1 text-xs font-medium text-emerald-600 hover:text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1.5 rounded-lg transition-colors"
+
+                                        className="flex items-center cursor-pointer gap-1 text-xs font-medium text-emerald-600 hover:text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1.5 rounded-lg transition-colors"
                                         title="Restore note"
                                     >
                                         <RotateCcw className="w-3.5 h-3.5" />
@@ -265,7 +258,8 @@ function TrashContent() {
                                                 note.id
                                             )
                                         }
-                                        className="p-2 text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors"
+
+                                        className="p-2 text-zinc-400 cursor-pointer hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors"
                                         title="Delete Forever"
                                     >
                                         <Trash2 className="w-4 h-4" />
@@ -275,9 +269,7 @@ function TrashContent() {
                         );
                     })}
 
-                    {/* =========================
-                        TRASHED NOTEBOOKS
-                    ========================= */}
+                    {/* TRASHED NOTEBOOKS */}
 
                     {trashNotebooks.map((notebook) => {
                         const rawColor =
@@ -305,7 +297,7 @@ function TrashContent() {
                                     }`}
                             >
                                 <div className="space-y-2">
-                                    <h3 className="font-semibold text-zinc-800 dark:text-zinc-100 text-base">
+                                    <h3 className="font-semibold truncate text-zinc-800 dark:text-zinc-100 text-base">
                                         {notebook.title}
                                     </h3>
 
@@ -322,7 +314,8 @@ function TrashContent() {
                                                 notebook.id
                                             )
                                         }
-                                        className="flex items-center gap-1 text-xs font-medium text-emerald-600 hover:text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1.5 rounded-lg transition-colors"
+
+                                        className="flex items-center cursor-pointer gap-1 text-xs font-medium text-emerald-600 hover:text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1.5 rounded-lg transition-colors"
                                         title="Restore notebook"
                                     >
                                         <RotateCcw className="w-3.5 h-3.5" />
@@ -334,7 +327,8 @@ function TrashContent() {
                                                 notebook.id
                                             )
                                         }
-                                        className="p-2 text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors"
+
+                                        className="p-2 text-zinc-400 cursor-pointer hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors"
                                         title="Delete Forever"
                                     >
                                         <Trash2 className="w-4 h-4" />
@@ -346,9 +340,7 @@ function TrashContent() {
                 </div>
             )}
 
-            {/* =========================
-                NOTE PERMANENT DELETE MODAL
-            ========================= */}
+            {/* NOTE PERMANENT DELETE MODAL */}
 
             {noteToDeleteForever && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50">
@@ -366,7 +358,7 @@ function TrashContent() {
                                 onClick={() =>
                                     setNoteToDeleteForever(null)
                                 }
-                                className="px-4 py-2 text-sm font-medium text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+                                className="px-4 py-2 text-sm font-medium cursor-pointer text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
                             >
                                 Cancel
                             </button>
@@ -375,7 +367,7 @@ function TrashContent() {
                                 onClick={
                                     handlePermanentDeleteNote
                                 }
-                                className="px-4 py-2 text-sm font-medium bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors shadow-sm"
+                                className="px-4 py-2 text-sm font-medium cursor-pointer bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors shadow-sm"
                             >
                                 Delete
                             </button>
@@ -384,9 +376,7 @@ function TrashContent() {
                 </div>
             )}
 
-            {/* =========================
-                NOTEBOOK PERMANENT DELETE MODAL
-            ========================= */}
+            {/* NOTEBOOK PERMANENT DELETE MODAL */}
 
             {notebookToDeleteForever && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50">
@@ -404,7 +394,7 @@ function TrashContent() {
                                 onClick={() =>
                                     setNotebookToDeleteForever(null)
                                 }
-                                className="px-4 py-2 text-sm font-medium text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+                                className="px-4 py-2 text-sm font-medium cursor-pointer text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
                             >
                                 Cancel
                             </button>
@@ -413,7 +403,7 @@ function TrashContent() {
                                 onClick={
                                     handlePermanentDeleteNotebook
                                 }
-                                className="px-4 py-2 text-sm font-medium bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors shadow-sm"
+                                className="px-4 py-2 cursor-pointer text-sm font-medium bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors shadow-sm"
                             >
                                 Delete
                             </button>
