@@ -365,9 +365,7 @@ export default function SingleNotebookPage({
     return (
         <div className="w-full space-y-6 relative">
 
-            {/* =========================
-                NOTEBOOK HEADER
-            ========================= */}
+            {/* NOTEBOOK HEADER */}
 
             <div className="flex items-center gap-3 px-2">
 
@@ -379,9 +377,8 @@ export default function SingleNotebookPage({
                 </Link>
 
                 <div>
-                    <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
-                        {notebook?.title ||
-                            'Notebook'}
+                    <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 break-all ">
+                        {notebook?.title || 'Notebook'}
                     </h1>
 
                     {notebook?.description && (

@@ -160,10 +160,11 @@ export default function NotebooksPage() {
                 </div>
                 <button
                     onClick={handleOpenCreateModal}
-                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors shadow-sm cursor-pointer"
+                    title='New Notebook'
+                    className="flex items-center gap-2 bg-green-700 hover:bg-green-800 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors shadow-sm cursor-pointer"
                 >
                     <Plus className="w-4 h-4" />
-                    New Notebook
+
                 </button>
             </div>
 
@@ -226,7 +227,7 @@ export default function NotebooksPage() {
                                     </div>
 
                                     <div>
-                                        <h3 className="font-semibold text-zinc-800 dark:text-zinc-100 text-base">
+                                        <h3 className="font-semibold text-zinc-800 dark:text-zinc-100 text-base truncate">
                                             {notebook.title}
                                         </h3>
                                         <p className="text-zinc-500 dark:text-zinc-400 text-xs line-clamp-2 mt-1">
