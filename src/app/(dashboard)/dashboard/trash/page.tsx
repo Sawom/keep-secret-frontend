@@ -2,7 +2,7 @@
 
 import { useState, Suspense } from 'react';
 import { noteService } from '@/services/note.service';
-import { RotateCcw, Trash2, Loader2, SearchX } from 'lucide-react';
+import { RotateCcw, Trash2, Loader2, SearchX, Folder } from 'lucide-react';
 import { notebookService } from '@/services/notebook.service';
 import { useTrash } from './../../../../hooks/useTrash';
 
@@ -45,8 +45,6 @@ function TrashContent() {
     };
 
     /*
-     * 🔧 NEW:
-     *
      * Notebook restore করার function।
      *
      * Restore সফল হলে useTrash store থেকে
@@ -66,8 +64,6 @@ function TrashContent() {
     };
 
     /*
-      
-     *
      * Note permanently delete করার function।
      */
     const handlePermanentDeleteNote = async () => {
@@ -90,8 +86,6 @@ function TrashContent() {
     };
 
     /*
-     * 🔧 NEW:
-     *
      * Notebook permanently delete করার function।
      */
     const handlePermanentDeleteNotebook = async () => {
@@ -116,13 +110,9 @@ function TrashContent() {
     };
 
     /*
-     * 🔧 NEW:
-     *
      * Notes + Notebooks একসাথে permanently delete করবে।
-     *
      * Backend-এর:
      * DELETE /trash/empty
-     *
      * একবারই call হবে।
      */
     const handleEmptyTrash = async () => {
@@ -285,25 +275,28 @@ function TrashContent() {
                         return (
                             <div
                                 key={`notebook-${notebook.id}`}
-                                style={{
-                                    backgroundColor:
-                                        isDefaultColor
-                                            ? undefined
-                                            : notebook.color,
-                                }}
                                 className={`group relative rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between border ${isDefaultColor
                                     ? 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800'
                                     : 'border-black/10 dark:border-white/20 text-zinc-900 dark:text-zinc-100'
                                     }`}
                             >
+                                {/* folder */}
+                                <div className='flex items-start mb-3'>
+                                    <div
+                                        className="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-sm"
+                                        style={{ backgroundColor: isDefaultColor ? undefined : notebook.color }}
+                                    >
+                                        <Folder className="w-5 h-5" />
+                                    </div>
+                                </div>
+
                                 <div className="space-y-2">
                                     <h3 className="font-semibold truncate text-zinc-800 dark:text-zinc-100 text-base">
                                         {notebook.title}
                                     </h3>
 
                                     <p className="text-zinc-600 dark:text-zinc-300 text-sm whitespace-pre-wrap line-clamp-6">
-                                        {notebook.description ||
-                                            'Notebook'}
+                                        {notebook.description || 'Notebook'}
                                     </p>
                                 </div>
 
