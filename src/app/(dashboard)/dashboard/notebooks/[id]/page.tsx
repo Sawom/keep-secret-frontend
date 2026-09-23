@@ -42,12 +42,6 @@ export default function SingleNotebookPage({
         getNotebookById,
     } = useNotebooks();
 
-    /*
-     * IMPORTANT:
-     *
-     * Search query intentionally empty.
-     * Notebook-এর ভিতরে search নেই।
-     */
     const {
         notes,
         loading,
@@ -400,9 +394,7 @@ export default function SingleNotebookPage({
                 </div>
             </div>
 
-            {/* =========================
-                TAKE A NOTE , Same UI as dashboard layout
-            ========================= */}
+            {/* TAKE A NOTE , Same UI as dashboard layout */}
 
             <div className="w-full max-w-2xl mx-auto">
 
@@ -551,9 +543,7 @@ export default function SingleNotebookPage({
                 </div>
             </div>
 
-            {/* =========================
-                NOTES
-            ========================= */}
+            {/* NOTES */}
 
             <div className="px-2">
 
