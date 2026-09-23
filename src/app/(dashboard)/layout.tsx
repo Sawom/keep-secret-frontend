@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Trash2, Edit3, Archive, Menu, Loader2, Pin, Settings, User, BookOpen, X, Image as ImageIcon, CheckSquare, Palette } from 'lucide-react';
+import { Trash2, Edit3, KeyRound, Menu, Loader2, Pin, User, BookOpen, X, Image as ImageIcon, CheckSquare } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 import LogoutButton from '@/components/LogoutButton';
 import { api } from '@/services/api';
@@ -184,12 +184,14 @@ export default function DashboardGroupLayout({
                     </button>
 
                     <Link href="/" className="flex items-center gap-2 cursor-pointer">
-                        <div className="w-8 h-8 bg-amber-400 rounded-full flex items-center justify-center font-bold text-zinc-900">
-                            K
+                        <div className="flex items-center gap-3 group cursor-pointer">
+                            <div className="w-8 h-8 rounded bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                                <KeyRound className="w-4 h-4 text-white" />
+                            </div>
+                            <span className="hidden md:inline-block font-bold text-lg tracking-tight">
+                                Keep<span className="text-indigo-600 dark:text-indigo-400">Secret</span>
+                            </span>
                         </div>
-                        <h1 className="text-xl font-medium text-zinc-700 dark:text-zinc-200 hidden sm:block">
-                            Keep Secret
-                        </h1>
                     </Link>
                 </div>
 
