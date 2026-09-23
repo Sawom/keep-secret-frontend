@@ -107,7 +107,7 @@ function ResetPasswordForm() {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full mt-2 flex items-center justify-center gap-2 py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors text-sm disabled:opacity-50"
+                        className="w-full mt-2 flex items-center cursor-pointer justify-center gap-2 py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors text-sm disabled:opacity-50"
                     >
                         {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Update Password'}
                     </button>

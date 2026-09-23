@@ -295,9 +295,7 @@ export default function DashboardGroupLayout({
 
                                     <div className="flex items-center justify-between pt-2 border-t border-zinc-100 dark:border-zinc-800">
                                         <div className="flex items-center gap-1 text-zinc-500 dark:text-zinc-400">
-                                            <button className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full" title="New List"><CheckSquare className="w-4 h-4" /></button>
-                                            <button className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full" title="Change Color"><Palette className="w-4 h-4" /></button>
-                                            <button className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full" title="Add Image"><ImageIcon className="w-4 h-4" /></button>
+                                            {/* empty */}
                                         </div>
 
                                         <div>
