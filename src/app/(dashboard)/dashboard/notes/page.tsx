@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Pin, Trash2, Loader2, SearchX, GripVertical, CheckSquare } from 'lucide-react';
+import { Pin, Trash2, Loader2, SearchX, GripVertical, X, CheckSquare } from 'lucide-react';
 import { useNotes } from '@/hooks/useNotes';
 
 // আসল নোট পেজের লজিক ও ইউআই অংশ
@@ -563,6 +563,7 @@ function NotesContent() {
 
                                         <button
                                             type="button"
+                                            title="Save Update"
                                             onClick={
                                                 handleSaveEdit
                                             }
@@ -572,20 +573,16 @@ function NotesContent() {
                                             className="px-4 py-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 text-sm font-medium rounded-lg transition-colors cursor-pointer flex items-center gap-1.5"
                                         >
                                             <CheckSquare className="w-4 h-4" />
-                                            Save
                                         </button>
 
                                         <button
                                             type="button"
-                                            onClick={
-                                                handleCloseModal
-                                            }
-                                            disabled={
-                                                isUpdating
-                                            }
-                                            className="px-6 py-2 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 text-sm font-medium rounded-lg transition-colors cursor-pointer"
+                                            title='Cancel'
+                                            onClick={handleCloseModal}
+                                            disabled={isUpdating}
+                                            className="px-4 py-2 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 text-sm font-medium rounded-lg transition-colors cursor-pointer"
                                         >
-                                            Close
+                                            <X className="w-4 h-4 " />
                                         </button>
                                     </div>
                                 </div>

@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Trash2, Edit3, Archive, Menu, Loader2, Pin, Settings, User, BookOpen, Bell, Image as ImageIcon, CheckSquare, Palette } from 'lucide-react';
+import { Trash2, Edit3, Archive, Menu, Loader2, Pin, Settings, User, BookOpen, X, Image as ImageIcon, CheckSquare, Palette } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 import LogoutButton from '@/components/LogoutButton';
 import { api } from '@/services/api';
@@ -193,22 +193,8 @@ export default function DashboardGroupLayout({
                     </Link>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center mx-5">
                     <SearchBar />
-                    {/* <Link
-                        href="/dashboard"
-                        className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-600 dark:text-zinc-300"
-                        title="Profile"
-                    >
-                        <User className="w-5 h-5" />
-                    </Link> */}
-                    <Link
-                        href="/dashboard/settings"
-                        className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-600 dark:text-zinc-300"
-                        title="Settings"
-                    >
-                        <Settings className="w-5 h-5" />
-                    </Link>
                 </div>
             </header>
 
@@ -300,6 +286,8 @@ export default function DashboardGroupLayout({
 
                                         <div>
                                             <button
+                                                type="button"
+                                                title="Save"
                                                 onClick={() => {
                                                     if (autoSaveTimerRef.current) {
                                                         clearTimeout(autoSaveTimerRef.current);
@@ -307,14 +295,16 @@ export default function DashboardGroupLayout({
                                                     }
                                                     handleSaveNote();
                                                 }}
+
                                                 disabled={isSaving}
-                                                className="px-4 mx-4 py-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 text-sm font-medium rounded-lg transition-colors"
+                                                className="px-4 mx-4 py-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 text-sm font-medium rounded-lg transition-colors cursor-pointer"
                                             >
                                                 {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckSquare className="w-4 h-4" />}
                                             </button>
 
                                             <button
                                                 type="button"
+                                                title='Cancel'
                                                 onClick={async (e) => {
                                                     e.stopPropagation();
                                                     await handleSaveNote();
@@ -323,7 +313,7 @@ export default function DashboardGroupLayout({
                                                 disabled={isSaving}
                                                 className="px-4 py-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 text-sm font-medium rounded-lg transition-colors cursor-pointer"
                                             >
-                                                Close
+                                                <X className="w-4 h-4 " />
                                             </button>
                                         </div>
                                     </div>
