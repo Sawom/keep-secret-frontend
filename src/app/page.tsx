@@ -153,7 +153,7 @@ export default function HomePage() {
             <div className="w-3 h-3 rounded-full bg-red-500/80" />
             <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
             <div className="w-3 h-3 rounded-full bg-green-500/80" />
-            <span className="ml-2 text-xs text-slate-500 font-mono">keepsecret-vault://secure-notes</span>
+            <span className="ml-2 text-xs text-slate-500 font-mono">keepsecret/notes</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
