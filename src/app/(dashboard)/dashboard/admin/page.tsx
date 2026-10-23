@@ -41,18 +41,50 @@ export default function AdminHealthPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // FRONTEND: request the protected report; a non-admin receives 403 from the backend.
+  // request the protected report; a non-admin receives 403 from the backend.
+  // Purpose: Fetch the protected Admin Health report and show useful errors.
   const loadReport = useCallback(async () => {
     setLoading(true);
     setError('');
+
     try {
-      const data = await api.get('/admin/health') as unknown as HealthReport;
+      // api.ts returns response.data, so this is the report object.
+      const data = await api.get(
+        '/admin/health'
+      ) as unknown as HealthReport;
+
       setReport(data);
     } catch (err: any) {
-      console.error('Failed to load admin health report:', err);
-      setError(err?.response?.status === 403
-        ? 'Your account does not have admin permission.'
-        : 'Could not load the report. Please refresh and try again.');
+      console.error(
+        'Failed to load admin health report:',
+        err
+      );
+
+      const status = err?.response?.status;
+
+      if (status === 401) {
+        setError(
+          'Your session is not valid. Please log out, log in again, and retry.'
+        );
+      } else if (status === 403) {
+        setError(
+          'Your account does not have admin permission. Confirm its role is ADMIN in the same Neon database used by the backend.'
+        );
+      } else if (status === 404) {
+        setError(
+          'The backend returned 404 for /admin/health. Deploy the backend containing the AdminModule and confirm NEXT_PUBLIC_API_URL points to that backend.'
+        );
+      } else if (status >= 500) {
+        setError(
+          `The backend failed while generating the report (HTTP ${status}). Check the backend deployment logs for the exact error.`
+        );
+      } else {
+        setError(
+          status
+            ? `Could not load the report (HTTP ${status}). Check the browser Network tab and backend logs.`
+            : 'Could not reach the backend. Check NEXT_PUBLIC_API_URL, CORS, and cookie settings.'
+        );
+      }
     } finally {
       setLoading(false);
     }
