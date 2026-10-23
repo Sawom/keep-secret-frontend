@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Trash2, Edit3, KeyRound, Menu, Loader2, Pin, User, BookOpen, X, Image as ImageIcon, CheckSquare } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 import LogoutButton from '@/components/LogoutButton';
@@ -16,6 +16,7 @@ export default function DashboardGroupLayout({
     children: React.ReactNode;
 }) {
     const pathname = usePathname();
+    const router = useRouter();
 
     // auth checking
     const [isCheckingAuth, setIsCheckingAuth] = useState(true);
@@ -36,74 +37,138 @@ export default function DashboardGroupLayout({
     const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
     // ড্যাশবোর্ড লেআউটে ঢোকার সাথেই সেশন ও রিফ্রেশ টোকেন চেক করা হচ্ছে
+
     useEffect(() => {
-        const verifySession =
-            async () => {
-                try {
-                    /*
-                     * HttpOnly cookie browser automatically পাঠাবে।
-                     * Frontend কখনো accessToken পড়বে না।
-                     */
-                    await api.get('/auth/profile');
+        let cancelled = false;
 
-                    setIsCheckingAuth(false);
-                } catch {
-                    /*
-                     * Access token expired হলে refresh endpoint
-                     * নতুন HttpOnly cookie set করবে।
-                     */
-                    try {
-                        await api.post('/auth/refresh', {});
+        setIsCheckingAuth(true);
 
-                        /*
-                         * Refresh সফল হয়েছে কিনা নিশ্চিত করতে
-                         * profile আবার check করছি।
-                         */
-                        await api.get('/auth/profile');
+        const verifySession = async () => {
+            try {
+                // api.ts already handles access-token refresh on 401.
+                const profileResponse = await api.get('/auth/profile') as {
+                    user?: {
+                        role?: string;
+                    };
+                };
 
-                        setIsCheckingAuth(false);
-                    } catch {
-                        window.location.replace(
-                            '/login?callbackUrl=/dashboard'
-                        );
-                    }
+                if (cancelled) return;
+
+                // Backend profile response shape: { message, user }.
+                const role = profileResponse?.user?.role ?? 'USER';
+
+                setUserRole(role);
+
+                // Direct URL access must also check the authenticated user's role.
+                const isAdminRoute =
+                    pathname === '/dashboard/admin' ||
+                    pathname.startsWith('/dashboard/admin/');
+
+                if (isAdminRoute && role !== 'ADMIN') {
+                    router.replace('/dashboard');
+                    return;
                 }
-            };
 
-        /*
-        * Normal dashboard load।
-        */
+                setIsCheckingAuth(false);
+            } catch (error) {
+                if (cancelled) return;
 
-        verifySession();
+                console.error('Session verification failed:', error);
 
-        /*
-     * Browser Back / Forward করলে browser অনেক সময়
-     * bfcache থেকে পুরোনো page restore করে।
-     *
-     * সেই ক্ষেত্রে আবার পুরো page reload করবো।
-     *
-     * তারপর dashboard-এর auth check আবার চলবে।
-     * Logout করা থাকলে /login-এ চলে যাবে।
-     */
+                // Do not render protected content when session verification fails.
+                window.location.replace(
+                    '/login?callbackUrl=' +
+                    encodeURIComponent(pathname)
+                );
+            }
+        };
+
+        void verifySession();
+
+        // Revalidate a page restored through browser back/forward cache.
         const handlePageShow = (event: PageTransitionEvent) => {
             if (event.persisted) {
                 window.location.reload();
             }
         };
 
-        window.addEventListener(
-            'pageshow',
-            handlePageShow
-        );
+        window.addEventListener('pageshow', handlePageShow);
 
         return () => {
-            window.removeEventListener(
-                'pageshow',
-                handlePageShow
-            );
+            cancelled = true;
+            window.removeEventListener('pageshow', handlePageShow);
         };
+    }, [pathname, router]);
 
-    }, []);
+
+    // useEffect(() => {
+    //     const verifySession =
+    //         async () => {
+    //             try {
+    //                 /*
+    //                  * HttpOnly cookie browser automatically পাঠাবে।
+    //                  * Frontend কখনো accessToken পড়বে না।
+    //                  */
+    //                 await api.get('/auth/profile');
+
+    //                 setIsCheckingAuth(false);
+    //             } catch {
+    //                 /*
+    //                  * Access token expired হলে refresh endpoint
+    //                  * নতুন HttpOnly cookie set করবে।
+    //                  */
+    //                 try {
+    //                     await api.post('/auth/refresh', {});
+
+    //                     /*
+    //                      * Refresh সফল হয়েছে কিনা নিশ্চিত করতে
+    //                      * profile আবার check করছি।
+    //                      */
+    //                     await api.get('/auth/profile');
+
+    //                     setIsCheckingAuth(false);
+    //                 } catch {
+    //                     window.location.replace(
+    //                         '/login?callbackUrl=/dashboard'
+    //                     );
+    //                 }
+    //             }
+    //         };
+
+    //     /*
+    //     * Normal dashboard load।
+    //     */
+
+    //     verifySession();
+
+    //     /*
+    //  * Browser Back / Forward করলে browser অনেক সময়
+    //  * bfcache থেকে পুরোনো page restore করে।
+    //  *
+    //  * সেই ক্ষেত্রে আবার পুরো page reload করবো।
+    //  *
+    //  * তারপর dashboard-এর auth check আবার চলবে।
+    //  * Logout করা থাকলে /login-এ চলে যাবে।
+    //  */
+    //     const handlePageShow = (event: PageTransitionEvent) => {
+    //         if (event.persisted) {
+    //             window.location.reload();
+    //         }
+    //     };
+
+    //     window.addEventListener(
+    //         'pageshow',
+    //         handlePageShow
+    //     );
+
+    //     return () => {
+    //         window.removeEventListener(
+    //             'pageshow',
+    //             handlePageShow
+    //         );
+    //     };
+
+    // }, []);
 
     // ১. মূল সেভ ফাংশন
     const handleSaveNote = async () => {
