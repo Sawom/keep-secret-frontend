@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef, Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Pin, Trash2, Loader2, SearchX, GripVertical, X, CheckSquare, Check, Square } from 'lucide-react';
+import { Pin, Trash2, Loader2, SearchX, GripVertical, X, CheckSquare, Check, Square, SquareX } from 'lucide-react';
 import { useNotes } from '@/hooks/useNotes';
 
 // আসল নোট পেজের লজিক ও ইউআই অংশ
@@ -201,32 +201,49 @@ function NotesContent() {
                 </h2>
             </div>
 
-            {/* FRONTEND: Google Keep-style bulk selection toolbar. */}
+            {/* note selection toolbar. */}
             {(displayedNotes.length > 0 || selectedNoteIds.length > 0) && (
                 <div className="flex flex-wrap items-center gap-3 px-2">
                     <button
                         type="button"
-                        onClick={() => setSelectedNoteIds(
-                            selectedNoteIds.length === displayedNotes.length
-                                ? []
-                                : displayedNotes.map((note) => note.id)
-                        )}
-                        className="text-sm text-zinc-600 dark:text-zinc-300 hover:text-amber-600"
+                        onClick={() =>
+                            setSelectedNoteIds(
+                                selectedNoteIds.length === displayedNotes.length
+                                    ? []
+                                    : displayedNotes.map((note) => note.id)
+                            )
+                        }
+                        title={
+                            selectedNoteIds.length === displayedNotes.length && displayedNotes.length > 0
+                                ? 'Clear all selected notes'
+                                : 'Select all visible notes'
+                        }
+                        className="inline-flex items-center gap-1.5 text-sm cursor-pointer text-zinc-600 dark:text-zinc-300 hover:text-amber-600 transition-colors"
                     >
-                        {selectedNoteIds.length === displayedNotes.length && displayedNotes.length > 0
-                            ? 'Clear selection'
-                            : 'Select all'}
+                        {selectedNoteIds.length === displayedNotes.length && displayedNotes.length > 0 ? (
+                            <>
+                                <SquareX className="w-4 h-4 text-amber-600" />
+                                <span>Deselect all</span>
+                            </>
+                        ) : (
+                            <>
+                                <CheckSquare className="w-4 h-4" />
+                                <span>Select all</span>
+                            </>
+                        )}
                     </button>
+
                     {selectedNoteIds.length > 0 && (
                         <>
                             <span className="text-sm text-zinc-500">{selectedNoteIds.length} selected</span>
                             <button
                                 type="button"
+                                title='Move to Trash'
                                 onClick={() => setShowBulkTrashConfirm(true)}
                                 disabled={isBulkDeleting}
-                                className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+                                className="inline-flex items-center cursor-pointer gap-2 rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
                             >
-                                <Trash2 className="h-4 w-4" /> Move to Trash
+                                <Trash2 className="h-4 w-4" />
                             </button>
                         </>
                     )}
@@ -361,7 +378,7 @@ function NotesContent() {
                                                     event.stopPropagation();
                                                     toggleNoteSelection(note.id);
                                                 }}
-                                                className={`rounded-full bg-white/90 dark:bg-zinc-900/90 p-1 shadow-sm ${selectedNoteIds.includes(note.id) ? 'opacity-100 text-amber-600' : 'opacity-0 group-hover:opacity-100 text-zinc-500'}`}
+                                                className={`rounded-full cursor-pointer bg-white/90 dark:bg-zinc-900/90 p-1 shadow-sm ${selectedNoteIds.includes(note.id) ? 'opacity-100 text-amber-600' : 'opacity-0 group-hover:opacity-100 text-zinc-500'}`}
                                             >
                                                 {selectedNoteIds.includes(note.id)
                                                     ? <Check className="h-4 w-4" />
