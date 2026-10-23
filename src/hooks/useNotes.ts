@@ -558,6 +558,31 @@ export function useNotes(searchQuery = '', notebookId?: string,) {
         fetchTrashNotes,
     ]);
 
+    // FRONTEND: bulk move selected notes to Trash; update Zustand/search cache only after backend success.
+    const bulkTrashNotes = async (ids: string[]) => {
+        const uniqueIds = [...new Set(ids)].filter(Boolean);
+        if (uniqueIds.length === 0) throw new Error('Select at least one note');
+        if (uniqueIds.length > 100) throw new Error('You can move up to 100 notes at once');
+
+        const selectedNotes = new Map<string, Note>();
+        for (const note of [...notes, ...searchResults]) {
+            if (uniqueIds.includes(note.id)) selectedNotes.set(note.id, note);
+        }
+
+        // Wait for the server; do not optimistically remove notes if the request fails.
+        await noteService.bulkSoftDeleteNotes(uniqueIds);
+
+        setNotes((previous) => previous.filter((note) => !uniqueIds.includes(note.id)));
+        setSearchResults((previous) => previous.filter((note) => !uniqueIds.includes(note.id)));
+        setTrashNotes((previous) => {
+            const existingIds = new Set(previous.map((note) => note.id));
+            const newlyTrashed = [...selectedNotes.values()].filter((note) => !existingIds.has(note.id));
+            return [...newlyTrashed, ...previous];
+        });
+
+        return { count: uniqueIds.length };
+    };
+
     // কনফার্মেশনের পর সফট ডিলিট হ্যান্ডলার
     const confirmDelete = async () => {
         if (!noteToDelete) return;
@@ -901,6 +926,7 @@ export function useNotes(searchQuery = '', notebookId?: string,) {
         handleCloseModal,
         confirmDelete,
         restoreNote,
+        bulkTrashNotes,
         permanentDeleteNote,
         emptyTrash,
         handleTogglePin,

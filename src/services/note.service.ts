@@ -132,6 +132,11 @@ export const noteService = {
         );
     },
 
+    // ৭. Bulk soft-delete: selected notes move to Trash (never permanent delete).
+    async bulkSoftDeleteNotes(ids: string[]) {
+        return await api.delete('/notes/bulk', { data: { ids } });
+    },
+
     // ৭. Trash notes fetch
     async getTrashNotes() {
         return await api.get(
