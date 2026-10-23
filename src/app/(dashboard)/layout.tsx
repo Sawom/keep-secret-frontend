@@ -236,7 +236,7 @@ export default function DashboardGroupLayout({
         { name: 'Notes', href: '/dashboard/notes', icon: Pin },
         { name: 'Notebooks', href: '/dashboard/notebooks', icon: BookOpen },
         { name: 'Trash', href: '/dashboard/trash', icon: Trash2 },
-        ...(userRole === 'ADMIN' ? [{ name: 'Admin Health', href: '/dashboard/admin', icon: CheckSquare }] : []),
+        ...(userRole === 'ADMIN' ? [{ name: 'Application Health', href: '/dashboard/admin', icon: CheckSquare }] : []),
     ];
 
     return (

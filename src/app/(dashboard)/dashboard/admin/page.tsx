@@ -97,7 +97,7 @@ export default function AdminHealthPage() {
   }
 
   if (error && !report) {
-    return <section className="w-full max-w-5xl space-y-4"><h1 className="text-2xl font-semibold text-zinc-900 dark:text-white">Admin Health</h1><p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">{error}</p><button onClick={() => void loadReport()} className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white">Try again</button></section>;
+    return <section className="w-full max-w-5xl space-y-4"><h1 className="text-2xl font-semibold text-zinc-900 dark:text-white">Application Health</h1><p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">{error}</p><button onClick={() => void loadReport()} className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white">Try again</button></section>;
   }
 
   if (!report) return null;
