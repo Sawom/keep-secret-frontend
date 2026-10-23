@@ -42,7 +42,7 @@ export default function AdminHealthPage() {
   const [error, setError] = useState('');
 
   // request the protected report; a non-admin receives 403 from the backend.
-  // Purpose: Fetch the protected Admin Health report and show useful errors.
+  // Purpose: Fetch the protected Application Health report and show useful errors.
   const loadReport = useCallback(async () => {
     setLoading(true);
     setError('');
@@ -56,7 +56,7 @@ export default function AdminHealthPage() {
       setReport(data);
     } catch (err: any) {
       console.error(
-        'Failed to load admin health report:',
+        'Failed to load Application health report:',
         err
       );
 
@@ -115,7 +115,7 @@ export default function AdminHealthPage() {
   return (
     <section className="w-full max-w-6xl space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div><h1 className="text-2xl font-semibold text-zinc-900 dark:text-white">Admin Health</h1><p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">Application usage and recent backend API performance.</p></div>
+        <div><h1 className="text-2xl font-semibold text-zinc-900 dark:text-white">Application Health</h1><p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">Application usage and recent backend API performance.</p></div>
         <button onClick={() => void loadReport()} disabled={loading} className="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"><RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /> Refresh</button>
       </div>
 
