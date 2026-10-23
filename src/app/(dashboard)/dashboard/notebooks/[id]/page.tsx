@@ -11,6 +11,8 @@ import {
     CheckSquare,
     SearchX,
     Check,
+    Square,
+    SquareX,
     X,
 } from 'lucide-react';
 
@@ -72,11 +74,9 @@ export default function SingleNotebookPage({
     const isSavingRef = useRef(false);
     const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-    // Bulk-selection state. IDs are unique even if a user clicks repeatedly.
-    const [selectedNoteIds, setSelectedNoteIds] = useState<Set<string>>(
-        new Set(),
-    );
-    const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
+    // Bulk-selection state local to notebook view.
+    const [selectedNoteIds, setSelectedNoteIds] = useState<string[]>([]);
+    const [showBulkTrashConfirm, setShowBulkTrashConfirm] = useState(false);
     const [isBulkDeleting, setIsBulkDeleting] = useState(false);
     const [bulkDeleteError, setBulkDeleteError] = useState('');
 
@@ -123,19 +123,6 @@ export default function SingleNotebookPage({
 
         return () => observer.disconnect();
     }, [loading, loadingMore, hasMore, loadMoreNotes]);
-
-    // Remove selected IDs that no longer exist in the displayed notes.
-    useEffect(() => {
-        const visibleIds = new Set(notes.map((note) => note.id));
-
-        setSelectedNoteIds((previous) => {
-            const next = new Set(
-                [...previous].filter((id) => visibleIds.has(id)),
-            );
-
-            return next.size === previous.size ? previous : next;
-        });
-    }, [notes]);
 
     // Create a note inside this notebook using the existing note service.
     const handleSaveNote = async () => {
@@ -198,68 +185,27 @@ export default function SingleNotebookPage({
         };
     }, [noteTitle, noteBody, isNoteExpanded]);
 
-    // Toggle selection without opening the note editor or starting a drag.
-    const toggleNoteSelection = (noteId: string) => {
-        setSelectedNoteIds((previous) => {
-            const next = new Set(previous);
-
-            if (next.has(noteId)) {
-                next.delete(noteId);
-            } else {
-                next.add(noteId);
-            }
-
-            return next;
-        });
+    // Toggle note selection for bulk actions.
+    const toggleNoteSelection = (id: string) => {
+        setSelectedNoteIds((current) =>
+            current.includes(id) ? current.filter((item) => item !== id) : [...current, id]
+        );
     };
 
-    // Select all currently loaded notes in this notebook, or clear selection.
-    const toggleSelectAllNotes = () => {
-        setSelectedNoteIds((previous) => {
-            const allVisibleSelected =
-                notes.length > 0 &&
-                notes.every((note) => previous.has(note.id));
-
-            if (allVisibleSelected) {
-                return new Set();
-            }
-
-            return new Set(notes.map((note) => note.id));
-        });
-    };
-
-    // Clicking a card selects it when selection mode is active; otherwise edit it.
-    const handleNoteCardClick = (note: (typeof notes)[number]) => {
-        if (selectedNoteIds.size > 0) {
-            toggleNoteSelection(note.id);
-            return;
-        }
-
-        handleStartEdit(note);
-    };
-
-    // Bulk-trash only the selected notes belonging to this notebook view.
+    // Bulk-trash selected notes.
     const handleConfirmBulkTrash = async () => {
-        const ids = [...selectedNoteIds];
-
-        if (ids.length === 0 || isBulkDeleting) return;
+        if (isBulkDeleting || selectedNoteIds.length === 0) return;
 
         setIsBulkDeleting(true);
         setBulkDeleteError('');
 
         try {
-            // This existing hook function calls the shared bulk-delete API
-            // and updates the notes/trash cache after the backend succeeds.
-            await bulkTrashNotes(ids);
-
-            setSelectedNoteIds(new Set());
-            setIsBulkDeleteOpen(false);
+            await bulkTrashNotes(selectedNoteIds);
+            setSelectedNoteIds([]);
+            setShowBulkTrashConfirm(false);
         } catch (error) {
             console.error('Failed to move selected notes to Trash:', error);
-
-            setBulkDeleteError(
-                'Could not move the selected notes to Trash. Please try again.',
-            );
+            setBulkDeleteError('Could not move selected notes to Trash. Please try again.');
         } finally {
             setIsBulkDeleting(false);
         }
@@ -367,7 +313,7 @@ export default function SingleNotebookPage({
                                             void handleSaveNote();
                                         }}
                                         disabled={isSaving}
-                                        className="px-4 mx-4 py-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 text-sm font-medium rounded-lg transition-colors"
+                                        className="px-4 mx-4 py-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 text-sm font-medium rounded-lg transition-colors cursor-pointer"
                                     >
                                         {isSaving ? (
                                             <Loader2 className="w-4 h-4 animate-spin" />
@@ -402,59 +348,61 @@ export default function SingleNotebookPage({
                 </div>
             </div>
 
-            {/* NOTEBOOK NOTES HEADING AND BULK ACTIONS */}
-            <div className="px-2 flex flex-wrap items-center justify-between gap-3">
+            {/* HEADING TITLE */}
+            <div className="flex items-center justify-between px-2">
                 <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
                     {notebook?.title
                         ? `${notebook.title} Notes (Drag to reorder)`
                         : 'Notebook Notes (Drag to reorder)'}
                 </h2>
-
-                {notes.length > 0 && (
-                    <button
-                        type="button"
-                        onClick={toggleSelectAllNotes}
-                        className="text-sm font-medium text-zinc-600 dark:text-zinc-300 hover:text-amber-600 dark:hover:text-amber-400"
-                    >
-                        {notes.every((note) =>
-                            selectedNoteIds.has(note.id),
-                        )
-                            ? 'Clear selection'
-                            : 'Select all'}
-                    </button>
-                )}
             </div>
 
-            {/* BULK SELECTION TOOLBAR */}
-            {selectedNoteIds.size > 0 && (
-                <div className="sticky top-16 z-20 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-md p-3">
-                    <div className="flex items-center gap-2 text-sm font-medium text-zinc-700 dark:text-zinc-200">
-                        <CheckSquare className="w-4 h-4 text-amber-600" />
-                        {selectedNoteIds.size} selected
-                    </div>
+            {/* NOTE SELECTION TOOLBAR - notes/page.tsx EXACT MATCH */}
+            {(notes.length > 0 || selectedNoteIds.length > 0) && (
+                <div className="flex flex-wrap items-center gap-3 px-2">
+                    <button
+                        type="button"
+                        onClick={() =>
+                            setSelectedNoteIds(
+                                selectedNoteIds.length === notes.length
+                                    ? []
+                                    : notes.map((note) => note.id)
+                            )
+                        }
+                        title={
+                            selectedNoteIds.length === notes.length && notes.length > 0
+                                ? 'Clear all selected notes'
+                                : 'Select all visible notes'
+                        }
+                        className="inline-flex items-center gap-1.5 text-sm cursor-pointer text-zinc-600 dark:text-zinc-300 hover:text-amber-600 transition-colors"
+                    >
+                        {selectedNoteIds.length === notes.length && notes.length > 0 ? (
+                            <>
+                                <SquareX className="w-4 h-4 text-amber-600" />
+                                <span>Deselect all</span>
+                            </>
+                        ) : (
+                            <>
+                                <CheckSquare className="w-4 h-4" />
+                                <span>Select all</span>
+                            </>
+                        )}
+                    </button>
 
-                    <div className="flex items-center gap-2">
-                        <button
-                            type="button"
-                            onClick={() => setSelectedNoteIds(new Set())}
-                            className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300"
-                        >
-                            <X className="w-4 h-4" />
-                            Cancel
-                        </button>
-
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setBulkDeleteError('');
-                                setIsBulkDeleteOpen(true);
-                            }}
-                            className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg bg-red-600 hover:bg-red-700 text-white"
-                        >
-                            <Trash2 className="w-4 h-4" />
-                            Move to Trash
-                        </button>
-                    </div>
+                    {selectedNoteIds.length > 0 && (
+                        <>
+                            <span className="text-sm text-zinc-500">{selectedNoteIds.length} selected</span>
+                            <button
+                                type="button"
+                                title="Move to Trash"
+                                onClick={() => setShowBulkTrashConfirm(true)}
+                                disabled={isBulkDeleting}
+                                className="inline-flex items-center cursor-pointer gap-2 rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+                            >
+                                <Trash2 className="h-4 w-4" />
+                            </button>
+                        </>
+                    )}
                 </div>
             )}
 
@@ -482,69 +430,60 @@ export default function SingleNotebookPage({
                                 rawColor === 'white' ||
                                 rawColor === 'transparent';
 
-                            const isSelected = selectedNoteIds.has(note.id);
-
                             return (
                                 <div
                                     key={note.id}
-                                    draggable={!isSelected}
+                                    draggable={selectedNoteIds.length === 0}
                                     onDragStart={() => {
-                                        if (!isSelected) {
+                                        if (selectedNoteIds.length === 0) {
                                             handleDragStart(index);
                                         }
                                     }}
-                                    onDragOver={(event) =>
-                                        handleDragOver(event, index)
-                                    }
-                                    onDragEnd={handleDragEnd}
-                                    onClick={() => handleNoteCardClick(note)}
+                                    onDragOver={(event) => {
+                                        if (selectedNoteIds.length === 0) {
+                                            handleDragOver(event, index);
+                                        }
+                                    }}
+                                    onDragEnd={() => {
+                                        if (selectedNoteIds.length === 0) {
+                                            handleDragEnd();
+                                        }
+                                    }}
+                                    onClick={() => {
+                                        if (selectedNoteIds.length > 0) {
+                                            toggleNoteSelection(note.id);
+                                            return;
+                                        }
+                                        handleStartEdit(note);
+                                    }}
                                     style={{
                                         backgroundColor: isDefaultColor
                                             ? undefined
                                             : note.color,
                                     }}
-                                    className={`group relative rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between border cursor-pointer ${isSelected
-                                        ? 'ring-2 ring-amber-500 border-amber-500'
-                                        : ''
-                                        } ${isDefaultColor
-                                            ? 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800'
-                                            : 'border-black/10 dark:border-white/20 text-zinc-900 dark:text-zinc-100'
+                                    className={`group relative rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between border cursor-pointer ${selectedNoteIds.includes(note.id) ? 'ring-2 ring-amber-500' : ''} ${isDefaultColor
+                                        ? 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800'
+                                        : 'border-black/10 dark:border-white/20 text-zinc-900 dark:text-zinc-100'
                                         }`}
                                 >
-                                    {/* Checkbox appears on hover or remains visible when selected. */}
-                                    <button
-                                        type="button"
-                                        aria-label={
-                                            isSelected
-                                                ? 'Deselect note'
-                                                : 'Select note'
-                                        }
-                                        aria-pressed={isSelected}
-                                        onClick={(event) => {
-                                            event.stopPropagation();
-                                            toggleNoteSelection(note.id);
-                                        }}
-                                        onDragStart={(event) =>
-                                            event.preventDefault()
-                                        }
-                                        className={`absolute top-3 left-3 z-10 w-7 h-7 rounded-full flex items-center justify-center border transition-all ${isSelected
-                                            ? 'opacity-100 bg-amber-500 border-amber-500 text-white'
-                                            : 'opacity-0 group-hover:opacity-100 bg-white/90 dark:bg-zinc-900/90 border-zinc-300 dark:border-zinc-600 text-zinc-500'
-                                            }`}
-                                    >
-                                        {isSelected && (
-                                            <Check className="w-4 h-4" />
-                                        )}
-                                    </button>
-
-                                    {/* Pin and drag controls */}
+                                    {/* Action controls - notes/page.tsx EXACT MATCH */}
                                     <div className="absolute top-3 right-3 flex items-center gap-1">
-                                        <span
-                                            className={`text-zinc-400 p-1 ${isSelected
-                                                ? 'opacity-30'
-                                                : 'opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing'
-                                                }`}
+                                        <button
+                                            type="button"
+                                            aria-label={selectedNoteIds.includes(note.id) ? 'Deselect note' : 'Select note'}
+                                            title={selectedNoteIds.includes(note.id) ? 'Deselect note' : 'Select note'}
+                                            onClick={(event) => {
+                                                event.stopPropagation();
+                                                toggleNoteSelection(note.id);
+                                            }}
+                                            className={`rounded-full cursor-pointer bg-white/90 dark:bg-zinc-900/90 p-1 shadow-sm ${selectedNoteIds.includes(note.id) ? 'opacity-100 text-amber-600' : 'opacity-0 group-hover:opacity-100 text-zinc-500'}`}
                                         >
+                                            {selectedNoteIds.includes(note.id)
+                                                ? <Check className="h-4 w-4" />
+                                                : <Square className="h-4 w-4" />}
+                                        </button>
+
+                                        <span className="opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing text-zinc-400 p-1">
                                             <GripVertical className="w-4 h-4" />
                                         </span>
 
@@ -557,7 +496,7 @@ export default function SingleNotebookPage({
                                                     note.isPinned,
                                                 );
                                             }}
-                                            className={`p-1.5 rounded-full transition-opacity ${note.isPinned
+                                            className={`p-1.5 rounded-full transition-opacity cursor-pointer ${note.isPinned
                                                 ? 'opacity-100 text-amber-500 bg-amber-50 dark:bg-amber-950/50'
                                                 : 'opacity-0 group-hover:opacity-100 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
                                                 }`}
@@ -571,7 +510,7 @@ export default function SingleNotebookPage({
                                         </button>
                                     </div>
 
-                                    <div className="space-y-2 pr-12 pl-5">
+                                    <div className="space-y-2 pr-12">
                                         <h3 className="font-semibold truncate text-zinc-800 dark:text-zinc-100 text-base">
                                             {note.title}
                                         </h3>
@@ -614,7 +553,7 @@ export default function SingleNotebookPage({
                                                 event.stopPropagation();
                                                 setNoteToDelete(note.id);
                                             }}
-                                            className="p-1 hover:bg-red-50 dark:hover:bg-red-950/30 text-zinc-400 hover:text-red-600 rounded-full transition-colors"
+                                            className="p-1 hover:bg-red-50 dark:hover:bg-red-950/30 text-zinc-400 hover:text-red-600 rounded-full transition-colors cursor-pointer"
                                             title="Delete note"
                                         >
                                             <Trash2 className="w-4 h-4" />
@@ -642,7 +581,7 @@ export default function SingleNotebookPage({
                 </>
             )}
 
-            {/* EDIT MODAL */}
+            {/* EDIT MODAL - notes/page.tsx EXACT MATCH */}
             {editingNoteId &&
                 (() => {
                     const activeNote = notes.find(
@@ -685,7 +624,7 @@ export default function SingleNotebookPage({
                                                 activeNote.isPinned,
                                             )
                                         }
-                                        className={`p-1.5 rounded-full transition-colors ${activeNote.isPinned
+                                        className={`p-1.5 rounded-full transition-colors cursor-pointer ${activeNote.isPinned
                                             ? 'text-amber-500 bg-amber-50 dark:bg-amber-950/50'
                                             : 'text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
                                             }`}
@@ -712,7 +651,7 @@ export default function SingleNotebookPage({
                                 />
 
                                 <textarea
-                                    placeholder="Add a chapter..."
+                                    placeholder="Take a note..."
                                     value={editBody}
                                     onChange={(event) =>
                                         setEditBody(event.target.value)
@@ -723,12 +662,33 @@ export default function SingleNotebookPage({
                                 />
 
                                 <div className="flex items-center justify-between pt-3 border-t border-zinc-100 dark:border-zinc-800">
-                                    <span className="text-[11px] text-zinc-400">
-                                        {formatLocalDate(
-                                            activeNote.updatedAt ||
-                                            activeNote.createdAt,
-                                        )}
-                                    </span>
+                                    <div className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400">
+                                        {(() => {
+                                            const created = new Date(
+                                                activeNote.createdAt,
+                                            ).getTime();
+
+                                            const updated = new Date(
+                                                activeNote.updatedAt,
+                                            ).getTime();
+
+                                            const isUpdated =
+                                                Math.abs(updated - created) >
+                                                2000;
+
+                                            return (
+                                                <span className="text-[11px] text-zinc-400">
+                                                    {isUpdated
+                                                        ? 'Edited: '
+                                                        : 'Created: '}
+                                                    {formatLocalDate(
+                                                        activeNote.updatedAt ||
+                                                        activeNote.createdAt,
+                                                    )}
+                                                </span>
+                                            );
+                                        })()}
+                                    </div>
 
                                     <div className="flex items-center gap-2">
                                         {isUpdating && (
@@ -737,21 +697,22 @@ export default function SingleNotebookPage({
 
                                         <button
                                             type="button"
+                                            title="Save Update"
                                             onClick={handleSaveEdit}
                                             disabled={isUpdating}
-                                            className="px-4 py-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 text-sm font-medium rounded-lg transition-colors flex items-center gap-1.5"
+                                            className="px-4 py-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 text-sm font-medium rounded-lg transition-colors cursor-pointer flex items-center gap-1.5"
                                         >
                                             <CheckSquare className="w-4 h-4" />
-                                            Save
                                         </button>
 
                                         <button
                                             type="button"
+                                            title="Cancel"
                                             onClick={handleCloseModal}
                                             disabled={isUpdating}
-                                            className="px-6 py-2 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 text-sm font-medium rounded-lg transition-colors"
+                                            className="px-4 py-2 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 text-sm font-medium rounded-lg transition-colors cursor-pointer"
                                         >
-                                            Close
+                                            <X className="w-4 h-4" />
                                         </button>
                                     </div>
                                 </div>
@@ -759,6 +720,21 @@ export default function SingleNotebookPage({
                         </div>
                     );
                 })()}
+
+            {/* BULK DELETE CONFIRMATION - notes/page.tsx EXACT MATCH */}
+            {showBulkTrashConfirm && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs">
+                    <div className="w-80 space-y-4 rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
+                        <h3 className="text-base font-semibold text-zinc-800 dark:text-zinc-100">Move selected notes to Trash?</h3>
+                        <p className="text-sm text-zinc-500 dark:text-zinc-400">{selectedNoteIds.length} selected note(s) will be moved to Trash. You can restore them later.</p>
+                        {bulkDeleteError && <p role="alert" className="text-sm text-red-600">{bulkDeleteError}</p>}
+                        <div className="flex justify-end gap-2 pt-2">
+                            <button type="button" disabled={isBulkDeleting} onClick={() => { setShowBulkTrashConfirm(false); setBulkDeleteError(''); }} className="rounded-lg px-4 py-2 text-sm text-zinc-600 hover:bg-zinc-100 disabled:opacity-50 dark:text-zinc-300 dark:hover:bg-zinc-800 cursor-pointer">Cancel</button>
+                            <button type="button" disabled={isBulkDeleting} onClick={handleConfirmBulkTrash} className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50 cursor-pointer">{isBulkDeleting ? 'Moving...' : 'Move to Trash'}</button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* SINGLE NOTE DELETE CONFIRMATION */}
             {noteToDelete && (
@@ -769,15 +745,14 @@ export default function SingleNotebookPage({
                         </h3>
 
                         <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                            Are you sure you want to move this note to the
-                            trash?
+                            Are you sure you want to move this note to the trash?
                         </p>
 
                         <div className="flex justify-end gap-2 pt-2">
                             <button
                                 type="button"
                                 onClick={() => setNoteToDelete(null)}
-                                className="px-4 py-2 text-sm font-medium text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg"
+                                className="px-4 py-2 text-sm font-medium text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors cursor-pointer"
                             >
                                 Cancel
                             </button>
@@ -785,64 +760,9 @@ export default function SingleNotebookPage({
                             <button
                                 type="button"
                                 onClick={confirmDelete}
-                                className="px-4 py-2 text-sm font-medium bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-sm"
+                                className="px-4 py-2 text-sm font-medium bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors shadow-sm cursor-pointer"
                             >
                                 OK
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* BULK DELETE CONFIRMATION */}
-            {isBulkDeleteOpen && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-[60] p-4">
-                    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 w-full max-w-sm shadow-xl space-y-4">
-                        <h3 className="text-base font-semibold text-zinc-800 dark:text-zinc-100">
-                            Move selected notes to Trash?
-                        </h3>
-
-                        <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                            {selectedNoteIds.size} selected note
-                            {selectedNoteIds.size === 1 ? '' : 's'} will be
-                            moved to Trash. You can restore them later.
-                        </p>
-
-                        {bulkDeleteError && (
-                            <p
-                                role="alert"
-                                className="text-sm text-red-600 dark:text-red-400"
-                            >
-                                {bulkDeleteError}
-                            </p>
-                        )}
-
-                        <div className="flex justify-end gap-2 pt-2">
-                            <button
-                                type="button"
-                                disabled={isBulkDeleting}
-                                onClick={() => {
-                                    setIsBulkDeleteOpen(false);
-                                    setBulkDeleteError('');
-                                }}
-                                className="px-4 py-2 text-sm font-medium text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg disabled:opacity-50"
-                            >
-                                Cancel
-                            </button>
-
-                            <button
-                                type="button"
-                                disabled={
-                                    isBulkDeleting ||
-                                    selectedNoteIds.size === 0
-                                }
-                                onClick={() => void handleConfirmBulkTrash()}
-                                className="px-4 py-2 text-sm font-medium bg-red-600 hover:bg-red-700 text-white rounded-lg disabled:opacity-50 flex items-center gap-2"
-                            >
-                                {isBulkDeleting && (
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                )}
-                                Move to Trash
                             </button>
                         </div>
                     </div>
